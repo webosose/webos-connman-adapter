@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.service.wifi;com.webos.service.wan;com.webos.service.connectionmanager;com.webos.service.pan
+Exec="@WEBOS_INSTALL_SBINDIR@/webos-connman-adapter
+Type=static

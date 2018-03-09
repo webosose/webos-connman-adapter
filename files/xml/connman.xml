@@ -1,0 +1,244 @@
+<!-- LICENSE@@@
+
+Copyright (c) 2013 LG Electronics, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@@@LICENSE -->
+
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+		"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+	<interface name="net.connman.Manager">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="SetProperty">
+			<arg type="s" direction="in"/>
+			<arg type="v" direction="in"/>
+		</method>
+		<method name="GetState">
+			<arg type="s" direction="out"/>
+		</method>
+		<method name="EnableTechnology">
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="DisableTechnology">
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="GetServices">
+			<arg type="a(oa{sv})" direction="out"/>
+		</method>
+		<method name="GetSavedServices">
+			<arg type="a(oa{sv})" direction="out"/>
+		</method>
+		<method name="ChangeSavedService">
+			<arg type="s" direction="in"/>
+			<arg type="a{sv}" direction="in"/>
+		</method>
+		<method name="GetTechnologies">
+			<arg type="a(oa{sv})" direction="out"/>
+		</method>
+		<method name="GetGroups">
+			<arg type="a(oa{sv})" direction="out"/>
+		</method>
+		<method name="RegisterAgent">
+			<arg type="o" direction="in"/>
+		</method>
+		<method name="UnregisterAgent">
+			<arg type="o" direction="in"/>
+		</method>
+		<method name="RegisterCounter">
+			<arg type="o" direction="in"/>
+			<arg type="u" direction="in"/>
+			<arg type="u" direction="in"/>
+		</method>
+		<method name="UnregisterCounter">
+			<arg type="o" direction="in"/>
+		</method>
+		<method name="CreateGroup">
+			<arg type="s" direction="in"/>
+			<arg type="s" direction="in"/>
+			<arg type="o" direction="out"/>
+		</method>
+		<method name="GetStaCount">
+			<arg type="i" direction="out"/>
+		</method>
+		<signal name="PropertyChanged">
+			<arg type="s"/>
+			<arg type="v"/>
+		</signal>
+		<signal name="TechnologyAdded">
+			<arg type="o"/>
+			<arg type="a{sv}"/>
+		</signal>
+		<signal name="TechnologyRemoved">
+			<arg type="o"/>
+		</signal>
+		<signal name="ServicesChanged">
+			<arg type="a(oa{sv})"/>
+			<arg type="ao"/>
+		</signal>
+		<signal name="SavedServicesChanged">
+			<arg type="a(oa{sv})"/>
+			<arg type="ao"/>
+		</signal>
+		<signal name="GroupAdded">
+			<arg type="o"/>
+			<arg type="a{sv}"/>
+		</signal>
+		<signal name="GroupRemoved">
+			<arg type="o"/>
+		</signal>
+	</interface>
+	<interface name="net.connman.Technology">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="SetProperty">
+			<arg type="s" direction="in"/>
+			<arg type="v" direction="in"/>
+		</method>
+		<method name="Scan">
+		</method>
+		<method name="StartWPS">
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="CancelP2P">
+		</method>
+		<method name="CancelWPS">
+		</method>
+		<method name="RemoveSavedServices">
+			<arg type="s" name="exception" direction="in"/>
+		</method>
+		<method name="GetInterfaceProperties">
+			<arg type="s" direction="in"/>
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<signal name="PropertyChanged">
+			<arg type="s"/>
+			<arg type="v"/>
+		</signal>
+		<signal name="WPSFailed"/>
+		<signal name="TetheringStaAuthorized"/>
+		<signal name="TetheringStaDeauthorized"/>
+	</interface>
+	<interface name="net.connman.Service">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="SetProperty">
+			<arg type="s" direction="in"/>
+			<arg type="v" direction="in"/>
+		</method>
+		<method name="Connect">
+		</method>
+		<method name="Disconnect">
+		</method>
+		<method name="Remove">
+		</method>
+		<method name="RejectPeer">
+		</method>
+		<signal name="PropertyChanged">
+			<arg type="s"/>
+			<arg type="v"/>
+		</signal>
+	</interface>
+	<interface name="net.connman.Agent">
+		<method name="Release">
+		</method>
+		<method name="ReportError">
+			<arg type="o" direction="in"/>
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="RequestBrowser">
+			<arg type="o" direction="in"/>
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="RequestInput">
+			<arg type="o" direction="in"/>
+			<arg type="a{sv}" direction="in"/>
+			<arg type="a{sv}" direction="out"/>
+		</method>
+	</interface>
+	<interface name="net.connman.Counter">
+		<method name="Release">
+		</method>
+		<method name="Usage">
+			<arg type="o" direction="in"/>
+			<arg type="a{sv}" direction="in"/>
+			<arg type="a{sv}" direction="in"/>
+		</method>
+	</interface>
+	<interface name="net.connman.Group">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="SetProperty">
+			<arg type="s" direction="in"/>
+			<arg type="v" direction="in"/>
+		</method>
+		<method name="Disconnect">
+		</method>
+		<method name="Invite">
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="GetPeers">
+			<arg type="a(oa{sv})" direction="out"/>
+		</method>
+		<signal name="PropertyChanged">
+			<arg type="s"/>
+			<arg type="v"/>
+		</signal>
+	</interface>
+	<interface name="net.connman.ServiceDiscovery">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="SetProperty">
+			<arg type="s" direction="in"/>
+			<arg type="v" direction="in"/>
+		</method>
+		<method name="RequestDiscoverUPnPService">
+			<arg type="s" direction="in"/>
+			<arg type="i" direction="in"/>
+			<arg type="s" direction="in"/>
+			<arg type="i" direction="out"/>
+		</method>
+		<method name="RequestDiscoverBonjourService">
+			<arg type="s" direction="in"/>
+			<arg type="ay" direction="in"/>
+			<arg type="i" direction="out"/>
+		</method>
+		<method name="RegisterUPnPService">
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="RemoveUPnPService">
+			<arg type="s" direction="in"/>
+		</method>
+		<method name="RegisterBonjourService">
+			<arg type="ay" direction="in"/>
+			<arg type="ay" direction="in"/>
+		</method>
+		<method name="RemoveBonjourService">
+			<arg type="ay" direction="in"/>
+		</method>
+		<signal name="DiscoveryResponse">
+			<arg type="s"/>
+			<arg type="i"/>
+			<arg type="ay">
+				<annotation name="org.gtk.GDBus.C.ForceGVariant" value="true"/>
+			</arg>
+		</signal>
+	</interface>
+</node>

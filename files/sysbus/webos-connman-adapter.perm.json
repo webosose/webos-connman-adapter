@@ -1,0 +1,22 @@
+{
+    "com.webos.service.wifi": [
+        "settings",
+        "devices",
+        "networking.internal"
+    ],
+    "com.webos.service.connectionmanager": [
+        "settings",
+        "devices",
+        "networking.internal"
+    ],
+    "com.webos.service.wan": [
+        "settings",
+        "devices",
+        "networking.internal"
+    ],
+    "com.webos.service.pan": [
+        "settings",
+        "devices",
+        "networking.internal"
+    ]
+}

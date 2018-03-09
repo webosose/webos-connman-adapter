@@ -1,0 +1,36 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/webos-connman-adapter",
+    "type":"regular",
+    "allowedNames":["com.webos.service.wifi", "com.webos.service.connectionmanager", "com.webos.service.wan", "com.webos.service.pan"],
+    "permissions": [
+        {
+            "service":"com.webos.service.wifi",
+            "outbound":["com.webos.service.pdm",
+                        "com.webos.settingsservice",
+                        "com.webos.service.wifi",
+                        "com.webos.service.config",
+                        "com.webos.service.connectionmanager"]
+        },
+        {
+            "service":"com.webos.service.connectionmanager",
+            "outbound":["com.webos.service.pdm",
+                        "com.webos.settingsservice",
+                        "com.webos.service.wifi",
+                        "com.webos.service.config"]
+        },
+        {
+            "service":"com.webos.service.wan",
+            "outbound":["com.webos.service.pdm",
+                        "com.webos.settingsservice",
+                        "com.webos.service.wifi",
+                        "com.webos.service.config"]
+        },
+        {
+            "service":"com.webos.service.pan",
+            "outbound":["com.webos.service.pdm",
+                        "com.webos.settingsservice",
+                        "com.webos.service.wifi",
+                        "com.webos.service.config"]
+        }
+    ]
+}
