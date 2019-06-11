@@ -3684,6 +3684,8 @@ int initialize_wifi_ls2_calls(GMainLoop *mainloop , LSHandle **wifi_handle)
 
 	init_wifi_profile_list();
 
+	initialize_wifi_tethering_ls2_calls(mainloop, pLsHandle);
+
 	*wifi_handle = pLsHandle;
 
 	return 0;
