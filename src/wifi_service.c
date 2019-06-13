@@ -1981,7 +1981,8 @@ static void technology_property_changed_callback(gpointer data,
 
 		if (g_strcmp0(property, "Tethering") == 0 ||
 		    g_strcmp0(property, "TetheringIdentifier") == 0 ||
-		    g_strcmp0(property, "TetheringPassphrase") == 0)
+		    g_strcmp0(property, "TetheringPassphrase") == 0 ||
+		    g_strcmp0(property, "TetheringChannel") == 0)
 		{
 			send_tethering_state_to_subscribers();
 			connectionmanager_send_status_to_subscribers();

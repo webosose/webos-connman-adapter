@@ -168,6 +168,36 @@ extern gboolean connman_technology_set_tethering_passphrase(
 }
 
 /**
+ * Set MultiChannelShedMode value to specified mode (see header for API details)
+ */
+
+gboolean connman_technology_set_tethering_channel(connman_technology_t
+        *technology, const guint32 channel)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "TetheringChannel",
+	        g_variant_new_variant(g_variant_new_uint32(channel)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_TETHERING_CHANNEL_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	technology->tethering_channel = channel;
+	return TRUE;
+}
+
+/**
  * Cancel any active P2P connection (see header for API details)
  */
 
@@ -640,6 +670,10 @@ static void set_property_value(connman_technology_t *technology,
 	{
 		g_free(technology->tethering_passphrase);
 		technology->tethering_passphrase = g_variant_dup_string(val, NULL);
+	}
+	else if (!g_strcmp0(key, "TetheringChannel"))
+	{
+		technology->tethering_channel = g_variant_get_uint32(val);
 	}
 	else if (!g_strcmp0(key, "CountryCode"))
 	{

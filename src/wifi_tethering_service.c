@@ -249,6 +249,17 @@ static void send_tethering_state(jvalue_ref *reply)
 		                           && (strlen(wifi_tech->tethering_passphrase) != 0) ? "psk" : "open"));
 	}
 
+	if (wifi_tech->tethering_channel == 0)
+	{
+		jobject_put(*reply, J_CSTR_TO_JVAL("channel"),
+		            jnumber_create_i32(1));
+	}
+	else
+	{
+		jobject_put(*reply, J_CSTR_TO_JVAL("channel"),
+		            jnumber_create_i32(wifi_tech->tethering_channel));
+	}
+
 	jobject_put(*reply, J_CSTR_TO_JVAL("timeout"),
 	            jnumber_create_i32(wifi_tethering_timeout));
 }
@@ -441,18 +452,19 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
 	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_5(PROP(enabled, boolean),
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_6(PROP(enabled, boolean),
 	                                     PROP(ssid, string), PROP(passPhrase, string), PROP(securityType, string),
-	                                     PROP(timeout, integer)))), &parsedObj))
+	                                     PROP(timeout, integer), PROP(channel, integer)))), &parsedObj))
 	{
 		return true;
 	}
 
 	jvalue_ref enabledObj = {0}, ssidObj = {0}, passPhraseObj = {0}, securityTypeObj
-	                                       = {0}, timeoutObj = {0};
+	                                       = {0}, timeoutObj = {0}, channelObj = {0};
 	gboolean enable_tethering = FALSE, invalidArg = TRUE;
 	gchar *ssid = NULL, *passphrase = NULL;
 	int timeout = 0;
+	guint32 channel = 0;
 	gboolean is_open = FALSE;
 	gboolean state_set = FALSE;
 
@@ -611,6 +623,29 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 		}
 
 		wifi_tethering_timeout = timeout;
+
+		invalidArg = FALSE;
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("channel"), &channelObj))
+	{
+		if (is_wifi_tethering())
+		{
+			LSMessageReplyCustomError(sh, message,
+			                          "Not allowed to change channel while tethering is enabled",
+			                          WCA_API_ERROR_TETHERING_NOT_ALLOWED_TO_CHANGE_TIMEOUT);
+			goto cleanup;
+		}
+
+		jnumber_get_i32(channelObj, &channel);
+
+		if (!connman_technology_set_tethering_channel(
+		            connman_manager_find_wifi_technology(manager), channel))
+		{
+			LSMessageReplyCustomError(sh, message, "Error in setting tethering Channel",
+										WCA_API_ERROR_TETHERING_CHANNEL_FAILED);
+			goto cleanup;
+		}
 
 		invalidArg = FALSE;
 	}

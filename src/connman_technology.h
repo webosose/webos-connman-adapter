@@ -59,6 +59,7 @@ typedef struct connman_technology
 	gboolean legacy_scan;
 	connman_wfd_dev_type wfd_devtype;
 	guint32 wfd_rtspport;
+	guint32 tethering_channel;
 	gulong property_changed_sighandler;
 	connman_property_changed_cb handle_property_changed_fn;
 	gulong sta_authorized_sighandler;
@@ -133,6 +134,17 @@ extern gboolean connman_technology_set_tethering_identifier(
  */
 extern gboolean connman_technology_set_tethering_passphrase(
     connman_technology_t *technology, const gchar *tethering_passphrase);
+
+/**
+ * Set the channel used in tethering
+ *
+ * @param[IN]  technology A technology instance
+ * @param[IN]  channel of the tethering
+ *
+ * @return FALSE for any error, TRUE otherwise
+ */
+extern gboolean connman_technology_set_tethering_channel(
+	connman_technology_t*technology, const guint32 channel);
 
 /**
  * Enable/disable wifi-direct technology
