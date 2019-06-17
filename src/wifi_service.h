@@ -48,6 +48,8 @@
 #define LUNA_METHOD_STARTWPS                "startwps"
 #define LUNA_METHOD_CANCELWPS               "cancelwps"
 
+#define LUNA_METHOD_SET_COUNTRY_CODE        "setCountryCode"
+#define LUNA_METHOD_GET_COUNTRY_CODE        "getCountryCode"
 
 #define WIFI_ENTERPRISE_SECURITY_TYPE       "ieee8021x"
 

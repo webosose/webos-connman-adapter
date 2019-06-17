@@ -69,6 +69,8 @@ errorText | Yes | String | Error description
 
 #define MAX_PREFIX_LENGTH   128
 
+#define MAX_COUNTRY_CODE_LENGTH 2
+
 static LSHandle *pLsHandle;
 
 connman_manager_t *manager = NULL;
@@ -3498,6 +3500,226 @@ static void handle_luna_subscription_cancel(LSHandle *sh, LSMessage *message, vo
 	}
 }
 
+static bool set_country_code(const char* countryCode)
+{
+	FILE *fp = NULL;
+	char *command = NULL;
+	command = g_strdup_printf("iw reg set %s", countryCode);
+
+	fp = popen(command, "r");
+	if (NULL == fp)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_wifi com.webos.wifi
+@{
+@section com_webos_wifi_setCountryCode setCountryCode
+
+Set the country code for wifi technology
+
+@par Parameters
+
+Name | Required | Type | Description
+-----|--------|------|----------
+countryCode | Yes | String | The ISO/IEC alpha2 country code for the country in which this device is currently operating
+
+@par Returns(Call) for all forms
+
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | Yes | Boolean | True
+
+@par Returns(Subscription)
+
+Not applicable.
+
+@}
+*/
+//->End of API documentation comment block
+
+static bool handle_set_country_code_command(LSHandle *sh,
+        LSMessage *message, void *context)
+{
+	if (!connman_status_check(manager, sh, message))
+	{
+		return true;
+	}
+
+	if (!wifi_technology_status_check(sh, message))
+	{
+		return true;
+	}
+
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(countryCode, string)) REQUIRED_1(countryCode))),
+	                             &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref countryCodeObj = NULL;
+	char *countryCode = NULL;
+
+	connman_technology_t *technology = connman_manager_find_wifi_technology(
+	                                       manager);
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("countryCode"), &countryCodeObj))
+	{
+		raw_buffer countryCode_buf = jstring_get(countryCodeObj);
+		countryCode = g_strdup(countryCode_buf.m_str);
+		jstring_free_buffer(countryCode_buf);
+	}
+	else
+	{
+		LSMessageReplyErrorInvalidParams(sh, message);
+		goto cleanup;
+	}
+
+	if (!set_country_code(countryCode))
+	{
+		LSMessageReplyCustomError(sh, message,
+		                          "Error in setting WiFi country code",
+		                          WCA_API_ERROR_WIFI_SET_COUNTRY_CODE_FAILED);
+	}
+
+	LSMessageReplySuccess(sh, message);
+cleanup:
+	g_free(countryCode);
+	j_release(&parsedObj);
+	return true;
+}
+
+static bool get_country_code()
+{
+	FILE *fp = NULL;
+	char countryCodeBuff[MAX_COUNTRY_CODE_LENGTH];
+	size_t readSize = 0;
+	char *command = NULL;
+	command = g_strdup_printf("iw reg get | awk '/^country/{print $2}' | cut -c 1-2");
+
+	fp = popen(command, "r");
+	if (NULL == fp)
+	{
+		return false;
+	}
+
+	readSize = fread((void*)countryCodeBuff, sizeof(char), MAX_COUNTRY_CODE_LENGTH, fp);
+	if (0 == readSize)
+	{
+		g_free(command);
+		pclose(fp);
+		return false;
+	}
+
+	connman_technology_t *technology = connman_manager_find_wifi_technology(manager);
+
+	if (NULL == technology)
+		return false;
+
+	if (NULL != technology->country_code)
+		g_free(technology->country_code);
+
+	technology->country_code = g_strndup(countryCodeBuff, MAX_COUNTRY_CODE_LENGTH);
+
+	return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_wifi com.webos.wifi
+@{
+@section com_webos_wifi_getCountryCode getCountryCode
+
+Gets the current WiFi country code
+
+@par Parameters
+
+Name | Required | Type | Description
+-----|--------|------|----------
+None
+
+@par Returns(Call) for all forms
+
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | Yes | Boolean | True
+countryCode | Yes | String | The ISO/IEC alpha2 country code for the country in which this device is currently operating
+
+@par Returns(Subscription)
+
+Not applicable.
+
+@}
+*/
+//->End of API documentation comment block
+
+static bool handle_get_country_code_command(LSHandle *sh,
+        LSMessage *message, void *context)
+{
+	if (!connman_status_check(manager, sh, message))
+	{
+		return true;
+	}
+
+	if (!wifi_technology_status_check(sh, message))
+	{
+		return true;
+	}
+
+	jvalue_ref reply = jobject_create();
+	LSError lserror;
+	LSErrorInit(&lserror);
+
+	connman_technology_t *technology = connman_manager_find_wifi_technology(
+	                                       manager);
+	jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
+
+
+
+	if (get_country_code() && NULL != technology->country_code)
+	{
+		jobject_put(reply, J_CSTR_TO_JVAL("countryCode"),
+				jstring_create(technology->country_code));
+	}
+
+	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
+	                              DOMOPT_NOOPT, NULL);
+
+	if (!response_schema)
+	{
+		LSMessageReplyErrorUnknown(sh, message);
+		goto cleanup;
+	}
+
+	if (!LSMessageReply(sh, message, jvalue_tostring(reply, response_schema),
+	                    &lserror))
+	{
+		LSErrorPrint(&lserror, stderr);
+		LSErrorFree(&lserror);
+	}
+
+	jschema_release(&response_schema);
+
+cleanup:
+
+	if (LSErrorIsSet(&lserror))
+	{
+		LSErrorPrint(&lserror, stderr);
+		LSErrorFree(&lserror);
+	}
+
+	j_release(&reply);
+	return true;
+}
+
 static void agent_registered_callback(gpointer user_data)
 {
 	gchar *agent_path;
@@ -3631,6 +3853,8 @@ static LSMethod wifi_methods[] =
 	{ LUNA_METHOD_CREATEWPSPIN,         handle_create_wpspin_command },
 	{ LUNA_METHOD_STARTWPS,     handle_start_wps_command },
 	{ LUNA_METHOD_CANCELWPS,        handle_cancel_wps_command },
+	{ LUNA_METHOD_SET_COUNTRY_CODE, handle_set_country_code_command },
+	{ LUNA_METHOD_GET_COUNTRY_CODE, handle_get_country_code_command },
 	{ },
 };
 
