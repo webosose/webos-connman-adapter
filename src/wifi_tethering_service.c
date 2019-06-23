@@ -249,6 +249,12 @@ static void send_tethering_state(jvalue_ref *reply)
 		                           && (strlen(wifi_tech->tethering_passphrase) != 0) ? "psk" : "open"));
 	}
 
+	if (NULL != wifi_tech->tethering_ipaddress)
+	{
+		jobject_put(*reply, J_CSTR_TO_JVAL("ipAddress"),
+		            jstring_create(wifi_tech->tethering_ipaddress));
+	}
+
 	if (wifi_tech->tethering_channel == 0)
 	{
 		jobject_put(*reply, J_CSTR_TO_JVAL("channel"),
@@ -452,17 +458,17 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
 	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_6(PROP(enabled, boolean),
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_7(PROP(enabled, boolean),
 	                                     PROP(ssid, string), PROP(passPhrase, string), PROP(securityType, string),
-	                                     PROP(timeout, integer), PROP(channel, integer)))), &parsedObj))
+	                                     PROP(timeout, integer), PROP(channel, integer), PROP(ipAddress, string)))), &parsedObj))
 	{
 		return true;
 	}
 
 	jvalue_ref enabledObj = {0}, ssidObj = {0}, passPhraseObj = {0}, securityTypeObj
-	                                       = {0}, timeoutObj = {0}, channelObj = {0};
+	                                       = {0}, timeoutObj = {0}, channelObj = {0}, ipAddressObj = {0};
 	gboolean enable_tethering = FALSE, invalidArg = TRUE;
-	gchar *ssid = NULL, *passphrase = NULL;
+	gchar *ssid = NULL, *passphrase = NULL, *ipAddress = NULL;
 	int timeout = 0;
 	guint32 channel = 0;
 	gboolean is_open = FALSE;
@@ -648,6 +654,36 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 		}
 
 		invalidArg = FALSE;
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ipAddress"), &ipAddressObj))
+	{
+		if (is_wifi_tethering())
+		{
+			LSMessageReplyCustomError(sh, message,
+			                          "Not allowed to change IP Address while tethering is enabled",
+			                          WCA_API_ERROR_TETHERING_IP_ADDRESS_FAILED);
+			goto cleanup;
+		}
+
+		raw_buffer ipAddress_buf = jstring_get(ipAddressObj);
+		ipAddress = g_strdup(ipAddress_buf.m_str);
+		jstring_free_buffer(ipAddress_buf);
+
+		if (NULL == ipAddress)
+		{
+			goto invalid_params;
+		}
+
+		invalidArg = FALSE;
+
+		if (!connman_technology_set_tethering_ipaddress(
+		            connman_manager_find_wifi_technology(manager), ipAddress))
+		{
+			LSMessageReplyCustomError(sh, message, "Error in setting tethering IP Address",
+					                                WCA_API_ERROR_TETHERING_IP_ADDRESS_FAILED);
+			goto cleanup;
+		}
 	}
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("enabled"), &enabledObj))

@@ -198,6 +198,38 @@ gboolean connman_technology_set_tethering_channel(connman_technology_t
 }
 
 /**
+ * Set the ipaddress of ssid used in tethering (see header for API details)
+ */
+
+extern gboolean connman_technology_set_tethering_ipaddress(
+    connman_technology_t *technology, const gchar *tethering_ipaddress)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "TetheringIPAddress",
+	        g_variant_new_variant(g_variant_new_string(tethering_ipaddress)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_TETHERING_IPADDRESS_ERROR,
+		                      error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	g_free(technology->tethering_ipaddress);
+	technology->tethering_ipaddress = g_strdup(tethering_ipaddress);
+	return TRUE;
+}
+
+/**
  * Cancel any active P2P connection (see header for API details)
  */
 
@@ -674,6 +706,11 @@ static void set_property_value(connman_technology_t *technology,
 	else if (!g_strcmp0(key, "TetheringChannel"))
 	{
 		technology->tethering_channel = g_variant_get_uint32(val);
+	}
+	else if (!g_strcmp0(key, "TetheringIPAddress"))
+	{
+		g_free(technology->tethering_ipaddress);
+		technology->tethering_ipaddress = g_variant_dup_string(val, NULL);
 	}
 	else if (!g_strcmp0(key, "CountryCode"))
 	{

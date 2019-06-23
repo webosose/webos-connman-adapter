@@ -47,6 +47,7 @@ typedef struct connman_technology
 	gchar *country_code;
 	gchar *tethering_identifier;
 	gchar *tethering_passphrase;
+	gchar *tethering_ipaddress;
 	gboolean powered;
 	gboolean connected;
 	gboolean tethering;
@@ -145,6 +146,17 @@ extern gboolean connman_technology_set_tethering_passphrase(
  */
 extern gboolean connman_technology_set_tethering_channel(
 	connman_technology_t*technology, const guint32 channel);
+
+/**
+ * Set ip address used in tethering
+ *
+ * @param[IN]  technology A technology instance
+ * @param[IN]  tethering ip address
+ *
+ * @return FALSE for any error, TRUE otherwise
+ */
+extern gboolean connman_technology_set_tethering_ipaddress(
+    connman_technology_t *technology, const gchar *tethering_ipaddress);
 
 /**
  * Enable/disable wifi-direct technology
