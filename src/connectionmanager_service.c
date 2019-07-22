@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -114,12 +114,6 @@ static bool is_caller_using_new_interface(LSMessage *message)
 	}
 
 	return (g_strcmp0(name, "com.webos.service.connectionmanager") == 0);
-}
-
-static gboolean set_ethernet_tethering_state(bool state)
-{
-	return connman_technology_set_tethering(
-	           connman_manager_find_ethernet_technology(manager), state);
 }
 
 /**
@@ -2487,78 +2481,6 @@ cleanup:
 	return true;
 }
 
-static bool handle_set_ethernet_tethering_command(LSHandle *sh,
-        LSMessage *message, void *context)
-{
-	if (!ethernet_technology_status_check(sh, message))
-	{
-		return true;
-	}
-
-	// To prevent memory leaks, schema should be checked before the variables will be initialized.
-	jvalue_ref parsed_obj = 0;
-	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(state,
-	                                     string))  REQUIRED_1(state))), &parsed_obj))
-	{
-		return true;
-	}
-
-	jvalue_ref state_obj = 0;
-	gboolean enable_tethering = FALSE;
-
-	if (jobject_get_exists(parsed_obj, J_CSTR_TO_BUF("state"), &state_obj))
-	{
-		if (jstring_equal2(state_obj, J_CSTR_TO_BUF("enabled")))
-		{
-			enable_tethering = TRUE;
-		}
-		else if (jstring_equal2(state_obj, J_CSTR_TO_BUF("disabled")))
-		{
-			enable_tethering = FALSE;
-		}
-		else
-		{
-			goto invalid_params;
-		}
-
-		if (enable_tethering && is_ethernet_tethering())
-		{
-			LSMessageReplyCustomError(sh, message, "Ethernet tethering already enabled",
-			                          WCA_API_ERROR_ETHERNET_TETHERING_ALREADY_ENABLED);
-			goto cleanup;
-		}
-		else if (!enable_tethering && !is_ethernet_tethering())
-		{
-			LSMessageReplyCustomError(sh, message, "Ethernet tethering already disabled",
-			                          WCA_API_ERROR_ETHERNET_TETHERING_ALREADY_DISABLED);
-			goto cleanup;
-		}
-
-		if (!set_ethernet_tethering_state(enable_tethering))
-		{
-			LSMessageReplyCustomError(sh, message, "Error in setting ethernet tethering",
-			                          WCA_API_ERROR_ETHERNET_TETHERING_SET);
-			goto cleanup;
-		}
-
-		LSMessageReplySuccess(sh, message);
-		goto cleanup;
-	}
-
-invalid_params:
-	LSMessageReplyErrorInvalidParams(sh, message);
-
-cleanup:
-
-	if (!jis_null(parsed_obj))
-	{
-		j_release(&parsed_obj);
-	}
-
-	return true;
-}
-
 static bool handle_set_proxy_command(LSHandle *sh,
         LSMessage *message, void *context)
 {
@@ -2764,7 +2686,6 @@ static LSMethod connectionmanager_methods[] =
 	{ LUNA_METHOD_SETIPV6,              handle_set_ipv6_command },
 	{ LUNA_METHOD_MONITORACTIVITY,      handle_monitor_activity_command },
 	{ LUNA_METHOD_SETTECHNOLOGYSTATE,   handle_set_technology_state_command },
-	{ LUNA_METHOD_SETETHERNETTETHERING, handle_set_ethernet_tethering_command },
 	{ LUNA_METHOD_SETPROXY,             handle_set_proxy_command },
 	{ LUNA_METHOD_FINDPROXYFORURL,      handle_find_proxy_for_url_command },
 	{ },

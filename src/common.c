@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -317,25 +317,6 @@ void retrieve_system_locale_info(LSHandle *handle)
 const gchar *get_current_system_locale()
 {
 	return current_system_locale;
-}
-
-gboolean ethernet_technology_status_check(LSHandle *sh, LSMessage *message)
-{
-	if (NULL == connman_manager_find_ethernet_technology(manager))
-	{
-		LSMessageReplyCustomError(sh, message, "Ethernet technology unavailable",
-		                          WCA_API_ERROR_ETHERNET_TECHNOLOGY_UNAVAILABLE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-gboolean is_ethernet_tethering(void)
-{
-	connman_technology_t *technology = connman_manager_find_ethernet_technology(
-	                                       manager);
-	return (NULL != technology) && technology->tethering;
 }
 
 /**
