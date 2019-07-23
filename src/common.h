@@ -29,10 +29,7 @@ extern gboolean connman_status_check(connman_manager_t *manager, LSHandle *sh,
                                      LSMessage *message);
 extern gboolean is_wifi_powered(void);
 extern gboolean is_wifi_tethering(void);
-extern gboolean is_cellular_powered(void);
 extern gboolean wifi_technology_status_check(LSHandle *sh, LSMessage *message);
-extern gboolean cellular_technology_status_check(LSHandle *sh,
-        LSMessage *message);
 extern gboolean wifi_technology_status_check_with_subscription(LSHandle *sh,
                                                         LSMessage *message, bool subscribed);
 extern gboolean connman_status_check_with_subscription(connman_manager_t *manager,
@@ -40,7 +37,6 @@ extern gboolean connman_status_check_with_subscription(connman_manager_t *manage
 extern gboolean set_wifi_powered_status(gboolean state);
 extern const gchar *get_current_system_locale();
 extern void retrieve_system_locale_info(LSHandle *handle);
-extern void set_cellular_powered_status(gboolean state);
 extern gboolean is_bluetooth_powered(void);
 extern gboolean is_bluetooth_tethering(void);
 extern bool is_valid_ipv6address(char *ipAddress);

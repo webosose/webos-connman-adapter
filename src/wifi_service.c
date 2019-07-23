@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ errorText | Yes | String | Error description
 #include "connectionmanager_service.h"
 #include "logging.h"
 #include "wifi_tethering_service.h"
-#include "wan_service.h"
 #include "pan_service.h"
 #include "errors.h"
 #include "nyx.h"
@@ -1793,13 +1792,6 @@ static void manager_services_changed_callback(gpointer data,
 		connectionmanager_send_status_to_subscribers();
 	}
 
-	if (service_type & CELLULAR_SERVICES_CHANGED)
-	{
-		connectionmanager_send_status_to_subscribers();
-		send_wan_connection_status_to_subscribers();
-		send_wan_contexts_update_to_subscribers();
-	}
-
 	if (service_type & BLUETOOTH_SERVICES_CHANGED)
 	{
 		connectionmanager_send_status_to_subscribers();
@@ -2326,7 +2318,6 @@ static void check_and_initialize_wifi_technology(void)
 static void manager_technologies_changed_callback(gpointer data)
 {
 	check_and_initialize_wifi_technology();
-	check_and_initialize_cellular_technology();
 	check_and_initialize_bluetooth_technology();
 	check_and_initialize_ethernet_technology();
 }
@@ -4232,7 +4223,6 @@ static void connman_service_started(GDBusConnection *conn, const gchar *name,
 
 	check_and_initialize_wifi_technology();
 	check_and_initialize_ethernet_technology();
-	check_and_initialize_cellular_technology();
 	check_and_initialize_bluetooth_technology();
 
 	connectionmanager_send_status_to_subscribers();

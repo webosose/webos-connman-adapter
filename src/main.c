@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@
 #include "logging.h"
 #include "wifi_service.h"
 #include "wifi_setting.h"
-#include "wan_service.h"
 #include "pan_service.h"
 #include "connectionmanager_service.h"
 #include "nyx.h"
@@ -61,7 +60,7 @@ term_handler(int signal)
 int
 main(int argc, char **argv)
 {
-	LSHandle *wifi_handle, *wan_handle, *cm_handle, *pan_handle;
+	LSHandle *wifi_handle, *cm_handle, *pan_handle;
 	signal(SIGTERM, term_handler);
 	signal(SIGINT, term_handler);
 
@@ -85,16 +84,9 @@ main(int argc, char **argv)
 		return -1;
 	}
 
-	if (initialize_wan_ls2_calls(mainloop, &wan_handle) < 0)
-	{
-		WCALOG_ERROR(MSGID_WAN_SRVC_REGISTER_FAIL, 0,
-		             "Error in initializing com.webos.service.wan service");
-		return -1;
-	}
-
 	if (initialize_pan_ls2_calls(mainloop, &pan_handle) < 0)
 	{
-		WCALOG_ERROR(MSGID_WAN_SRVC_REGISTER_FAIL, 0,
+		WCALOG_ERROR(MSGID_PAN_SRVC_REGISTER_FAIL, 0,
 		             "Error in initializing com.webos.serivce.pan service");
 		return -1;
 	}
@@ -108,7 +100,7 @@ main(int argc, char **argv)
 
 	wca_support_connman_update_callbacks wca_support_library_cb = { 0 };
 
-	if (wca_support_init(wifi_handle, cm_handle, wan_handle,
+	if (wca_support_init(wifi_handle, cm_handle,
 	                     &wca_support_library_cb, NULL, &gLogContext) < 0)
 	{
 		WCALOG_ERROR(MSGID_WCA_SUPPORT_FAIL, 0,

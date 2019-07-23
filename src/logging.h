@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,10 +63,8 @@ extern PmLogContext gLogContext;
 /** common ones */
 #define MSGID_WIFI_SRVC_REGISTER_FAIL                   "WIFI_SRVC_REGISTER_FAIL"
 #define MSGID_CM_SRVC_REGISTER_FAIL                     "WIFI_CM_REGISTER_FAIL"
-#define MSGID_WAN_SRVC_REGISTER_FAIL                    "WAN_SRVC_REGISTER_FAIL"
 #define MSGID_PAN_SRVC_REGISTER_FAIL                    "PAN_SRVC_REGISTER_FAIL"
 
-#define MSGID_WAN_SRVC_ALLOC_FAIL                       "WAN_SRVC_ALLOC_FAIL"
 #define MSGID_INVALID_STATE                             "INVALID_STATE"
 
 /** main.c */
@@ -234,11 +232,6 @@ extern PmLogContext gLogContext;
 #define MSGID_NYX_DEVICE_OPEN_ERROR                     "NYX_DEVICE_OPEN_ERROR"
 #define MSGID_NYX_DEVICE_CLOSE_ERROR                    "NYX_DEVICE_CLOSE_ERROR"
 #define MSGID_NYX_DEINIT_ERROR                          "NYX_DEINIT_ERROR"
-
-/** Wan info codes **/
-#define MSGID_WAN_CONNECT_INFO                          "WAN_CONNECT_INFO"
-#define MSGID_WAN_DISCONNECT_INFO                       "WAN_DISCONNECT_INFO"
-#define MSGID_WAN_SET_HOSTROUTE_ERROR                   "WAN_SET_HOSTROUTE_ERR"
 
 /** json_utils.c **/
 #define MSGID_JSON_KEY_NULL                             "JSON_KEY_NULL"

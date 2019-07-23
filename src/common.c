@@ -150,65 +150,6 @@ gboolean set_wifi_powered_status(gboolean state)
 	return FALSE;
 }
 
-void set_cellular_powered_status(gboolean state)
-{
-	connman_technology_t *cellular_tech = connman_manager_find_cellular_technology(
-	        manager);
-
-	if (!cellular_tech)
-	{
-		return;
-	}
-
-	connman_technology_set_powered(cellular_tech, state, NULL);
-}
-
-/**
-*  @brief Returns true if wan technology is powered on
-*
-*/
-
-gboolean is_cellular_powered(void)
-{
-	connman_technology_t *technology = connman_manager_find_cellular_technology(
-	                                       manager);
-	return (NULL != technology) && technology->powered;
-}
-
-/**
-*  @brief Check if the wan technology is available
-*   Send an error luna message if its not available
-*
-*  @param sh
-*  @param message
-*/
-
-gboolean cellular_technology_status_check(LSHandle *sh, LSMessage *message)
-{
-	if (NULL == connman_manager_find_cellular_technology(manager))
-	{
-		LSMessageReplyCustomError(sh, message, "Cellular technology unavailable",
-		                          WCA_API_ERROR_CELLULAR_TECH_UNAVAILABLE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-gboolean cellular_technology_status_check_with_subscription(LSHandle *sh,
-        LSMessage *message, bool subscribed)
-{
-	if (NULL == connman_manager_find_cellular_technology(manager))
-	{
-		LSMessageReplyCustomErrorWithSubscription(sh, message,
-		        "Cellular technology unavailable",
-		        WCA_API_ERROR_CELLULAR_TECH_UNAVAILABLE, subscribed);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 bool is_valid_ipv6address(char *ipAddress)
 {
 	unsigned char ipv6_addr[sizeof(struct in6_addr)];
