@@ -59,15 +59,6 @@ gboolean connman_service_type_p2p(connman_service_t *service)
 }
 
 /**
-* Check if the type of the service is bluetooth (see header for API details)
-*/
-
-gboolean connman_service_type_bluetooth(connman_service_t *service)
-{
-	return (NULL != service) && (service->type == CONNMAN_SERVICE_TYPE_BLUETOOTH);
-}
-
-/**
  * Map the service connection status to corresponding webos state
  * (see header for API details)
  */
@@ -1344,10 +1335,6 @@ void connman_service_update_properties(connman_service_t *service,
 			else if (!g_strcmp0(v, "Peer"))
 			{
 				service->type = CONNMAN_SERVICE_TYPE_P2P;
-			}
-			else if (!g_strcmp0(v, "bluetooth"))
-			{
-				service->type = CONNMAN_SERVICE_TYPE_BLUETOOTH;
 			}
 		}
 		else if (!g_strcmp0(key, "State"))

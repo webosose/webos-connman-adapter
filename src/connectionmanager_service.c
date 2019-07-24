@@ -57,7 +57,6 @@ errorText | Yes | String | Error description
 #include "utils.h"
 #include "nyx.h"
 #include "pacrunner_client.h"
-#include "pan_service.h"
 #include "wifi_setting.h"
 
 #define COUNTER_ACCURACY    10
@@ -76,10 +75,8 @@ gboolean wifi_online_checking_status = FALSE;
 gboolean wired_connected = FALSE;
 gboolean wifi_connected = FALSE;
 gboolean p2p_connected = FALSE;
-gboolean pan_connected = FALSE;
 guint block_getstatus_response = 0;
 gboolean old_wifi_tethering = FALSE;
-gboolean old_pan_tethering = FALSE;
 gboolean wired_plugged = FALSE;
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
@@ -88,30 +85,6 @@ char getinfo_cur_wired_mac_address[MAC_ADDR_STRING_LEN]={0};
 static void getinfo_update(void);
 
 #define IS_WIRED_PLUGGED() g_slist_length(manager->wired_services)
-
-static bool is_caller_using_new_interface(LSMessage *message)
-{
-	if (!message)
-	{
-		return false;
-	}
-
-	LSHandle *handle = LSMessageGetConnection(message);
-
-	if (!handle)
-	{
-		return false;
-	}
-
-	const char *name = LSHandleGetName(handle);
-
-	if (!name)
-	{
-		return false;
-	}
-
-	return (g_strcmp0(name, "com.webos.service.connectionmanager") == 0);
-}
 
 /**
  * @brief Fill in information about the system's connection status
@@ -423,8 +396,7 @@ static void append_p2p_connection_status(jvalue_ref *status,
  * @param reply JSON object where we will append the connection status to.
  */
 
-static void append_connection_status(jvalue_ref *reply, bool subscribed,
-                                     bool with_new_interface)
+static void append_connection_status(jvalue_ref *reply, bool subscribed)
 {
 	if (NULL == reply)
 	{
@@ -520,38 +492,6 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed,
 		jobject_put(*reply, J_CSTR_TO_JVAL("wifiDirect"), disconnected_p2p_status);
 		j_release(&connected_p2p_status);
 	}
-
-	if (with_new_interface)
-	{
-		jvalue_ref connected_pan_status = jobject_create();
-		jvalue_ref disconnected_pan_status = jobject_create();
-		jobject_put(disconnected_pan_status, J_CSTR_TO_JVAL("state"),
-		            jstring_create("disconnected"));
-		jobject_put(disconnected_pan_status, J_CSTR_TO_JVAL("tetheringEnabled"),
-		            jboolean_create(is_bluetooth_tethering()));
-
-		connman_service_t *connected_pan_service =
-		    connman_manager_get_connected_service(manager->bluetooth_services);
-
-		if (NULL != connected_pan_service)
-		{
-			append_nap_info(&connected_pan_status);
-			update_connection_status(connected_pan_service, &connected_pan_status);
-
-			// When we're connected to a PAN service we can't have tethering enabled
-			jobject_put(connected_pan_status, J_CSTR_TO_JVAL("tetheringEnabled"),
-			            jboolean_create(false));
-
-			jobject_put(*reply, J_CSTR_TO_JVAL("bluetooth"), connected_pan_status);
-			j_release(&disconnected_pan_status);
-		}
-		else
-		{
-			jobject_put(*reply, J_CSTR_TO_JVAL("bluetooth"), disconnected_pan_status);
-			j_release(&connected_pan_status);
-		}
-
-	}
 }
 
 /**
@@ -621,12 +561,6 @@ static gboolean check_update_is_needed(void)
 		needed = TRUE;
 	}
 
-	if (old_pan_tethering != is_bluetooth_tethering())
-	{
-		old_pan_tethering = is_bluetooth_tethering();
-		needed = TRUE;
-	}
-
 	gboolean old_online_status = online_status;
 
 	online_status = connman_manager_is_manager_online(manager);
@@ -682,16 +616,6 @@ static gboolean check_update_is_needed(void)
 	}
 
 	p2p_connected = (connected_p2p_service != NULL && manager->groups != NULL);
-
-	connman_service_t *connected_pan_service =
-	    connman_manager_get_connected_service(manager->bluetooth_services);
-
-	if (check_service_for_update(connected_pan_service, pan_connected))
-	{
-		needed = TRUE;
-	}
-
-	pan_connected = (connected_pan_service != NULL);
 
 	WCALOG_INFO(MSGID_CONNECTION_INFO, 0, "needed: %d",needed);
 
@@ -773,10 +697,8 @@ void connectionmanager_send_status_to_subscribers(void)
 
 	jvalue_ref reply = jobject_create();
 	jvalue_ref reply_deprecated = jobject_create();
-	append_connection_status(&reply, true, true);
-	// Same but without mentioning PAN as we don't support it on the
-	// com.webos.service.connectionmanager service face
-	append_connection_status(&reply_deprecated, true, false);
+	append_connection_status(&reply, true);
+	append_connection_status(&reply_deprecated, true);
 
 	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
@@ -945,8 +867,7 @@ static bool handle_get_status_command(LSHandle *sh, LSMessage *message,
 		}
 	}
 
-	append_connection_status(&reply, subscribed,
-	                         is_caller_using_new_interface(message));
+	append_connection_status(&reply, subscribed);
 
 	response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
 

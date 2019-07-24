@@ -175,7 +175,6 @@ typedef enum
 	CONNMAN_SERVICE_TYPE_ETHERNET,
 	CONNMAN_SERVICE_TYPE_WIFI,
 	CONNMAN_SERVICE_TYPE_P2P,
-	CONNMAN_SERVICE_TYPE_BLUETOOTH,
 	CONNMAN_SERVICE_TYPE_MAX
 } connman_service_types;
 
@@ -230,15 +229,6 @@ extern gboolean connman_service_type_ethernet(connman_service_t *service);
  * @return TRUE if the service has "Peer" type
  */
 extern gboolean connman_service_type_p2p(connman_service_t *service);
-
-/**
-* Check if the type of the service is bluetooth
-*
-* @param[IN]  service A service instance
-*
-* @return TRUE if the service has "bluetooth" type
-*/
-extern gboolean connman_service_type_bluetooth(connman_service_t *service);
 
 /**
  * Stringify the service connection status to corresponding webos state

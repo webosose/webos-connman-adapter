@@ -37,14 +37,8 @@ extern gboolean connman_status_check_with_subscription(connman_manager_t *manage
 extern gboolean set_wifi_powered_status(gboolean state);
 extern const gchar *get_current_system_locale();
 extern void retrieve_system_locale_info(LSHandle *handle);
-extern gboolean is_bluetooth_powered(void);
-extern gboolean is_bluetooth_tethering(void);
 extern bool is_valid_ipv6address(char *ipAddress);
 extern bool is_valid_ipaddress(char *ipAddress);
-extern gboolean bluetooth_technology_status_check(LSHandle *sh,
-        LSMessage *message);
-extern gboolean bluetooth_technology_status_check_with_subscription(
-    LSHandle *sh, LSMessage *message, bool subscribed);
 
 #endif /* _COMMON_H_ */
 

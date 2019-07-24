@@ -34,7 +34,6 @@
 #define ETHERNET_SERVICES_CHANGED   1
 #define WIFI_SERVICES_CHANGED       2
 #define P2P_SERVICES_CHANGED        4
-#define BLUETOOTH_SERVICES_CHANGED  16
 
 /**
  * Callback function for handling any changes in connman services
@@ -64,7 +63,6 @@ typedef struct connman_manager
 	GSList  *wifi_services;
 	GSList  *wired_services;
 	GSList  *p2p_services;
-	GSList  *bluetooth_services;
 	GSList  *saved_services;
 	GSList  *technologies;
 	GSList  *groups;
@@ -152,16 +150,6 @@ extern connman_technology_t *connman_manager_find_wifi_technology(
  * @return Technology with type "wired"
  */
 extern connman_technology_t *connman_manager_find_ethernet_technology(
-    connman_manager_t *manager);
-
-/**
-* Go through the manager's technologies list and get the technology with type "bluetooth"
-*
-* @param[IN]  manager A manager instance
-*
-* @return Technology with type "bluetooth"
-*/
-extern connman_technology_t *connman_manager_find_bluetooth_technology(
     connman_manager_t *manager);
 
 /**

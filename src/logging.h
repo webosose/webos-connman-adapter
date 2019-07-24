@@ -63,7 +63,6 @@ extern PmLogContext gLogContext;
 /** common ones */
 #define MSGID_WIFI_SRVC_REGISTER_FAIL                   "WIFI_SRVC_REGISTER_FAIL"
 #define MSGID_CM_SRVC_REGISTER_FAIL                     "WIFI_CM_REGISTER_FAIL"
-#define MSGID_PAN_SRVC_REGISTER_FAIL                    "PAN_SRVC_REGISTER_FAIL"
 
 #define MSGID_INVALID_STATE                             "INVALID_STATE"
 
@@ -214,14 +213,6 @@ extern PmLogContext gLogContext;
 #define MSGID_SETTING_LPAPP_COPY_ERROR                  "SETTING_LPAPP_COPY_ERR"
 #define MSGID_SETTING_LPAPP_REMOVE_ERROR                "SETTING_LPAPP_REMOVE_ERR"
 #define MSGID_SETTING_LPAPP_SET_ERROR                   "SETTING_LPAPP_SET_ERR"
-
-/** pan_service.c */
-#define MSGID_PAN_LUNA_BUS_ERROR                       "PAN_LUNA_BUS_ERR"
-#define MSGID_PAN_METHODS_LUNA_ERROR                   "PAN_METHODS_LUNA_ERR"
-#define MSGID_PAN_GLOOP_ATTACH_ERROR                   "PAN_GLOOP_ATTACH_ERR"
-#define MSGID_PAN_CONNECT_SERVICE_ERROR                "PAN_CONNECT_SERVICE_ERROR"
-#define MSGID_PAN_SKIPPING_FETCH_PROPERTIES            "PAN_SKIPPING_FETCH_PROPERTIES"
-#define MSGID_PAN_SERVICE_NOT_EXIST                    "PAN_SERVICE_NOT_EXIST"
 
 /** country_code.c */
 #define MSGID_COUNTRY_CODE_INFO                         "COUNTRY_CODE_INFO"

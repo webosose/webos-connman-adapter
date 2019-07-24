@@ -86,8 +86,8 @@ set(GDBUS_IF_DIR ${WEBOS_BINARY_CONFIGURED_DIR}/src)
 
 file (MAKE_DIRECTORY ${GDBUS_IF_DIR})
 
-execute_process(COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-namespace ConnmanInterface --generate-c-code 
-			${GDBUS_IF_DIR}/connman-interface --interface-prefix net.connman. 
+execute_process(COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-namespace ConnmanInterface --generate-c-code
+			${GDBUS_IF_DIR}/connman-interface --interface-prefix net.connman.
 			${CMAKE_CURRENT_SOURCE_DIR}/files/xml/connman.xml
 			RESULT_VARIABLE codegen_failed)
 if(codegen_failed)
@@ -136,7 +136,6 @@ file(GLOB SOURCE_FILES
     src/wifi_service.c
     src/wifi_setting.c
     src/wifi_scan.c
-    src/pan_service.c
     src/state_recovery.c
     ${GDBUS_IF_DIR}/connman-interface.c
     ${GDBUS_IF_DIR}/pacrunner-interface.c)
