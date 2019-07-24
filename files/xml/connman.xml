@@ -1,6 +1,6 @@
 <!-- LICENSE@@@
 
-Copyright (c) 2013 LG Electronics, Inc.
+Copyright (c) 2013-2019 LG Electronics, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -130,8 +130,6 @@ limitations under the License.
 			<arg type="v"/>
 		</signal>
 		<signal name="WPSFailed"/>
-		<signal name="TetheringStaAuthorized"/>
-		<signal name="TetheringStaDeauthorized"/>
 	</interface>
 	<interface name="net.connman.Service">
 		<method name="GetProperties">

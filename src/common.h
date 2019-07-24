@@ -28,7 +28,6 @@ extern connman_agent_t *agent;
 extern gboolean connman_status_check(connman_manager_t *manager, LSHandle *sh,
                                      LSMessage *message);
 extern gboolean is_wifi_powered(void);
-extern gboolean is_wifi_tethering(void);
 extern gboolean wifi_technology_status_check(LSHandle *sh, LSMessage *message);
 extern gboolean wifi_technology_status_check_with_subscription(LSHandle *sh,
                                                         LSMessage *message, bool subscribed);
