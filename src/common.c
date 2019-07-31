@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,19 +85,6 @@ gboolean is_wifi_powered(void)
 }
 
 /**
- *  @brief Check wether the wifi technology is currently tethering (the "Tethering"
- *         property has the value true)
- *
- * @return Returns true if wifi technology is currently tethering, false otherwise.
- */
-gboolean is_wifi_tethering(void)
-{
-	connman_technology_t *technology = connman_manager_find_wifi_technology(
-	                                       manager);
-	return (NULL != technology) && technology->tethering;
-}
-
-/**
  *  @brief Check if the wifi technology is available. If the technology is not available
  *  an error message is send to the supplied luna message handle.
  *
@@ -148,65 +135,6 @@ gboolean set_wifi_powered_status(gboolean state)
 	}
 
 	return FALSE;
-}
-
-void set_cellular_powered_status(gboolean state)
-{
-	connman_technology_t *cellular_tech = connman_manager_find_cellular_technology(
-	        manager);
-
-	if (!cellular_tech)
-	{
-		return;
-	}
-
-	connman_technology_set_powered(cellular_tech, state, NULL);
-}
-
-/**
-*  @brief Returns true if wan technology is powered on
-*
-*/
-
-gboolean is_cellular_powered(void)
-{
-	connman_technology_t *technology = connman_manager_find_cellular_technology(
-	                                       manager);
-	return (NULL != technology) && technology->powered;
-}
-
-/**
-*  @brief Check if the wan technology is available
-*   Send an error luna message if its not available
-*
-*  @param sh
-*  @param message
-*/
-
-gboolean cellular_technology_status_check(LSHandle *sh, LSMessage *message)
-{
-	if (NULL == connman_manager_find_cellular_technology(manager))
-	{
-		LSMessageReplyCustomError(sh, message, "Cellular technology unavailable",
-		                          WCA_API_ERROR_CELLULAR_TECH_UNAVAILABLE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-gboolean cellular_technology_status_check_with_subscription(LSHandle *sh,
-        LSMessage *message, bool subscribed)
-{
-	if (NULL == connman_manager_find_cellular_technology(manager))
-	{
-		LSMessageReplyCustomErrorWithSubscription(sh, message,
-		        "Cellular technology unavailable",
-		        WCA_API_ERROR_CELLULAR_TECH_UNAVAILABLE, subscribed);
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 bool is_valid_ipv6address(char *ipAddress)
@@ -319,83 +247,3 @@ const gchar *get_current_system_locale()
 	return current_system_locale;
 }
 
-gboolean ethernet_technology_status_check(LSHandle *sh, LSMessage *message)
-{
-	if (NULL == connman_manager_find_ethernet_technology(manager))
-	{
-		LSMessageReplyCustomError(sh, message, "Ethernet technology unavailable",
-		                          WCA_API_ERROR_ETHERNET_TECHNOLOGY_UNAVAILABLE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-gboolean is_ethernet_tethering(void)
-{
-	connman_technology_t *technology = connman_manager_find_ethernet_technology(
-	                                       manager);
-	return (NULL != technology) && technology->tethering;
-}
-
-/**
- *  @brief Check wether the bluetooth technology is powered (the "Powered" property has the
- *  value true).
- *
- *  @return Returns true if bluetooth technology is powered on
- */
-
-gboolean is_bluetooth_powered(void)
-{
-	connman_technology_t *technology = connman_manager_find_bluetooth_technology(
-	                                       manager);
-	return (NULL != technology) && technology->powered;
-}
-
-/**
- *  @brief Check wether the bluetooth technology is currently tethering (the "Tethering"
- *         property has the value true)
- *
- * @return Returns true if bluetooth technology is currently tethering, false otherwise.
- */
-gboolean is_bluetooth_tethering(void)
-{
-	connman_technology_t *technology = connman_manager_find_bluetooth_technology(
-	                                       manager);
-	return (NULL != technology) && technology->tethering;
-}
-
-/**
- *  @brief Check if the bluetooth technology is available. If the technology is not available
- *  an error message is send to the supplied luna message handle.
- *
- *  @param sh Luna śervice handle
- *  @param message Luna message handle
- *  @return TRUE if bluetooth technology is available, FALSE otherwise.
- */
-
-gboolean bluetooth_technology_status_check(LSHandle *sh, LSMessage *message)
-{
-	if (NULL == connman_manager_find_bluetooth_technology(manager))
-	{
-		LSMessageReplyCustomError(sh, message, "Bluetooth technology unavailable",
-		                          WCA_API_ERROR_BLUETOOTH_TECHNOLOGY_UNAVAILABLE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-gboolean bluetooth_technology_status_check_with_subscription(LSHandle *sh,
-        LSMessage *message, bool subscribed)
-{
-	if (NULL == connman_manager_find_bluetooth_technology(manager))
-	{
-		LSMessageReplyCustomErrorWithSubscription(sh, message,
-		        "Bluetooth technology unavailable",
-		        WCA_API_ERROR_BLUETOOTH_TECHNOLOGY_UNAVAILABLE, subscribed);
-		return FALSE;
-	}
-
-	return TRUE;
-}

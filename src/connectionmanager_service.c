@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,8 +57,6 @@ errorText | Yes | String | Error description
 #include "utils.h"
 #include "nyx.h"
 #include "pacrunner_client.h"
-#include "wan_service.h"
-#include "pan_service.h"
 #include "wifi_setting.h"
 
 #define COUNTER_ACCURACY    10
@@ -77,12 +75,7 @@ gboolean wifi_online_checking_status = FALSE;
 gboolean wired_connected = FALSE;
 gboolean wifi_connected = FALSE;
 gboolean p2p_connected = FALSE;
-gboolean cellular_powered = FALSE;
-gboolean wan_connected = FALSE;
-gboolean pan_connected = FALSE;
 guint block_getstatus_response = 0;
-gboolean old_wifi_tethering = FALSE;
-gboolean old_pan_tethering = FALSE;
 gboolean wired_plugged = FALSE;
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
@@ -91,36 +84,6 @@ char getinfo_cur_wired_mac_address[MAC_ADDR_STRING_LEN]={0};
 static void getinfo_update(void);
 
 #define IS_WIRED_PLUGGED() g_slist_length(manager->wired_services)
-
-static bool is_caller_using_new_interface(LSMessage *message)
-{
-	if (!message)
-	{
-		return false;
-	}
-
-	LSHandle *handle = LSMessageGetConnection(message);
-
-	if (!handle)
-	{
-		return false;
-	}
-
-	const char *name = LSHandleGetName(handle);
-
-	if (!name)
-	{
-		return false;
-	}
-
-	return (g_strcmp0(name, "com.webos.service.connectionmanager") == 0);
-}
-
-static gboolean set_ethernet_tethering_state(bool state)
-{
-	return connman_technology_set_tethering(
-	           connman_manager_find_ethernet_technology(manager), state);
-}
 
 /**
  * @brief Fill in information about the system's connection status
@@ -432,8 +395,7 @@ static void append_p2p_connection_status(jvalue_ref *status,
  * @param reply JSON object where we will append the connection status to.
  */
 
-static void append_connection_status(jvalue_ref *reply, bool subscribed,
-                                     bool with_new_interface)
+static void append_connection_status(jvalue_ref *reply, bool subscribed)
 {
 	if (NULL == reply)
 	{
@@ -460,8 +422,6 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed,
 	            jstring_create("disconnected"));
 	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("state"),
 	            jstring_create("disconnected"));
-	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("tetheringEnabled"),
-	            jboolean_create(is_wifi_tethering()));
 	jobject_put(disconnected_p2p_status, J_CSTR_TO_JVAL("state"),
 	            jstring_create("disconnected"));
 
@@ -497,10 +457,6 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed,
 	{
 		update_connection_status(connected_wifi_service, &connected_wifi_status);
 
-		// When we're connected to a WiFi service we can't have tethering enabled
-		jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("tetheringEnabled"),
-		            jboolean_create(false));
-
 		jobject_put(*reply, J_CSTR_TO_JVAL("wifi"), connected_wifi_status);
 		j_release(&disconnected_wifi_status);
 	}
@@ -528,61 +484,6 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed,
 	{
 		jobject_put(*reply, J_CSTR_TO_JVAL("wifiDirect"), disconnected_p2p_status);
 		j_release(&connected_p2p_status);
-	}
-
-	if (with_new_interface)
-	{
-		jvalue_ref cellular_obj = jobject_create();
-		gboolean cellular_enabled = is_cellular_powered();
-
-		jobject_put(cellular_obj, J_CSTR_TO_JVAL("enabled"),
-		            jboolean_create(cellular_enabled));
-		jobject_put(*reply, J_CSTR_TO_JVAL("cellular"), cellular_obj);
-
-		jvalue_ref wan_obj = jobject_create();
-
-		if (cellular_enabled)
-		{
-			append_wan_status(wan_obj);
-		}
-		else
-		{
-			jvalue_ref connected_contexts_obj = jarray_create(NULL);
-			jobject_put(wan_obj, J_CSTR_TO_JVAL("connected"), jboolean_create(false));
-			jobject_put(wan_obj, J_CSTR_TO_JVAL("connectedContexts"),
-			            connected_contexts_obj);
-		}
-
-		jobject_put(*reply, J_CSTR_TO_JVAL("wan"), wan_obj);
-
-		jvalue_ref connected_pan_status = jobject_create();
-		jvalue_ref disconnected_pan_status = jobject_create();
-		jobject_put(disconnected_pan_status, J_CSTR_TO_JVAL("state"),
-		            jstring_create("disconnected"));
-		jobject_put(disconnected_pan_status, J_CSTR_TO_JVAL("tetheringEnabled"),
-		            jboolean_create(is_bluetooth_tethering()));
-
-		connman_service_t *connected_pan_service =
-		    connman_manager_get_connected_service(manager->bluetooth_services);
-
-		if (NULL != connected_pan_service)
-		{
-			append_nap_info(&connected_pan_status);
-			update_connection_status(connected_pan_service, &connected_pan_status);
-
-			// When we're connected to a PAN service we can't have tethering enabled
-			jobject_put(connected_pan_status, J_CSTR_TO_JVAL("tetheringEnabled"),
-			            jboolean_create(false));
-
-			jobject_put(*reply, J_CSTR_TO_JVAL("bluetooth"), connected_pan_status);
-			j_release(&disconnected_pan_status);
-		}
-		else
-		{
-			jobject_put(*reply, J_CSTR_TO_JVAL("bluetooth"), disconnected_pan_status);
-			j_release(&connected_pan_status);
-		}
-
 	}
 }
 
@@ -647,18 +548,6 @@ static gboolean check_update_is_needed(void)
 		return FALSE;
 	}
 
-	if (old_wifi_tethering != is_wifi_tethering())
-	{
-		old_wifi_tethering = is_wifi_tethering();
-		needed = TRUE;
-	}
-
-	if (old_pan_tethering != is_bluetooth_tethering())
-	{
-		old_pan_tethering = is_bluetooth_tethering();
-		needed = TRUE;
-	}
-
 	gboolean old_online_status = online_status;
 
 	online_status = connman_manager_is_manager_online(manager);
@@ -714,52 +603,6 @@ static gboolean check_update_is_needed(void)
 	}
 
 	p2p_connected = (connected_p2p_service != NULL && manager->groups != NULL);
-
-	if (cellular_powered != is_cellular_powered())
-	{
-		cellular_powered = is_cellular_powered();
-		needed = TRUE;
-	}
-
-	connman_service_t *connected_pan_service =
-	    connman_manager_get_connected_service(manager->bluetooth_services);
-
-	if (check_service_for_update(connected_pan_service, pan_connected))
-	{
-		needed = TRUE;
-	}
-
-	pan_connected = (connected_pan_service != NULL);
-
-
-	GSList *iter;
-	guint num_connected = 0;
-
-	for (iter = manager->cellular_services; iter != NULL; iter = iter->next)
-	{
-		connman_service_t *service = iter->data;
-
-		if (!connman_service_is_connected(service))
-		{
-			continue;
-		}
-
-		num_connected++;
-
-		if (check_service_for_update(service, wan_connected || (num_connected > 0)))
-		{
-			needed = TRUE;
-		}
-	}
-
-	gboolean new_wan_connected = (num_connected > 0);
-
-	if (wan_connected != new_wan_connected)
-	{
-		needed = TRUE;
-	}
-
-	wan_connected = new_wan_connected;
 
 	WCALOG_INFO(MSGID_CONNECTION_INFO, 0, "needed: %d",needed);
 
@@ -841,10 +684,8 @@ void connectionmanager_send_status_to_subscribers(void)
 
 	jvalue_ref reply = jobject_create();
 	jvalue_ref reply_deprecated = jobject_create();
-	append_connection_status(&reply, true, true);
-	// Same but without mentioning WAN and PAN as we don't support it on the
-	// com.webos.service.connectionmanager service face
-	append_connection_status(&reply_deprecated, true, false);
+	append_connection_status(&reply, true);
+	append_connection_status(&reply_deprecated, true);
 
 	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
@@ -1013,8 +854,7 @@ static bool handle_get_status_command(LSHandle *sh, LSMessage *message,
 		}
 	}
 
-	append_connection_status(&reply, subscribed,
-	                         is_caller_using_new_interface(message));
+	append_connection_status(&reply, subscribed);
 
 	response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
 
@@ -1644,11 +1484,6 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 		}
 		else
 		{
-			if (enable_offline && is_wifi_tethering())
-			{
-				set_wifi_tethering(!enable_offline);
-			}
-
 			connman_manager_set_offlinemode(manager, enable_offline);
 		}
 
@@ -2094,11 +1929,6 @@ static void counter_usage_callback(const gchar *path, GVariant *home,
 	{
 		service = connman_manager_find_service_by_path(manager->wifi_services, path);
 
-		if (NULL == service)
-		{
-			service = connman_manager_find_service_by_path(manager->cellular_services,
-			          path);
-		}
 	}
 
 	if (NULL == service)
@@ -2173,10 +2003,6 @@ static void append_data_activity(jvalue_ref *reply)
 
 	jobject_put(*reply, J_CSTR_TO_JVAL("wired"), wired_stats);
 	jobject_put(*reply, J_CSTR_TO_JVAL("wifi"), wifi_stats);
-
-	jvalue_ref wan_stats = jobject_create();
-	append_interface_data_activity(&wan_stats, CONNMAN_SERVICE_TYPE_CELLULAR);
-	jobject_put(*reply, J_CSTR_TO_JVAL("wan"), wan_stats);
 
 	memcpy(counter_data_old, counter_data_new, sizeof(counter_data_old));
 	memset(counter_data_new, 0, sizeof(counter_data_new));
@@ -2487,78 +2313,6 @@ cleanup:
 	return true;
 }
 
-static bool handle_set_ethernet_tethering_command(LSHandle *sh,
-        LSMessage *message, void *context)
-{
-	if (!ethernet_technology_status_check(sh, message))
-	{
-		return true;
-	}
-
-	// To prevent memory leaks, schema should be checked before the variables will be initialized.
-	jvalue_ref parsed_obj = 0;
-	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(state,
-	                                     string))  REQUIRED_1(state))), &parsed_obj))
-	{
-		return true;
-	}
-
-	jvalue_ref state_obj = 0;
-	gboolean enable_tethering = FALSE;
-
-	if (jobject_get_exists(parsed_obj, J_CSTR_TO_BUF("state"), &state_obj))
-	{
-		if (jstring_equal2(state_obj, J_CSTR_TO_BUF("enabled")))
-		{
-			enable_tethering = TRUE;
-		}
-		else if (jstring_equal2(state_obj, J_CSTR_TO_BUF("disabled")))
-		{
-			enable_tethering = FALSE;
-		}
-		else
-		{
-			goto invalid_params;
-		}
-
-		if (enable_tethering && is_ethernet_tethering())
-		{
-			LSMessageReplyCustomError(sh, message, "Ethernet tethering already enabled",
-			                          WCA_API_ERROR_ETHERNET_TETHERING_ALREADY_ENABLED);
-			goto cleanup;
-		}
-		else if (!enable_tethering && !is_ethernet_tethering())
-		{
-			LSMessageReplyCustomError(sh, message, "Ethernet tethering already disabled",
-			                          WCA_API_ERROR_ETHERNET_TETHERING_ALREADY_DISABLED);
-			goto cleanup;
-		}
-
-		if (!set_ethernet_tethering_state(enable_tethering))
-		{
-			LSMessageReplyCustomError(sh, message, "Error in setting ethernet tethering",
-			                          WCA_API_ERROR_ETHERNET_TETHERING_SET);
-			goto cleanup;
-		}
-
-		LSMessageReplySuccess(sh, message);
-		goto cleanup;
-	}
-
-invalid_params:
-	LSMessageReplyErrorInvalidParams(sh, message);
-
-cleanup:
-
-	if (!jis_null(parsed_obj))
-	{
-		j_release(&parsed_obj);
-	}
-
-	return true;
-}
-
 static bool handle_set_proxy_command(LSHandle *sh,
         LSMessage *message, void *context)
 {
@@ -2764,7 +2518,6 @@ static LSMethod connectionmanager_methods[] =
 	{ LUNA_METHOD_SETIPV6,              handle_set_ipv6_command },
 	{ LUNA_METHOD_MONITORACTIVITY,      handle_monitor_activity_command },
 	{ LUNA_METHOD_SETTECHNOLOGYSTATE,   handle_set_technology_state_command },
-	{ LUNA_METHOD_SETETHERNETTETHERING, handle_set_ethernet_tethering_command },
 	{ LUNA_METHOD_SETPROXY,             handle_set_proxy_command },
 	{ LUNA_METHOD_FINDPROXYFORURL,      handle_find_proxy_for_url_command },
 	{ },

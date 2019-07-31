@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,10 +63,7 @@ extern PmLogContext gLogContext;
 /** common ones */
 #define MSGID_WIFI_SRVC_REGISTER_FAIL                   "WIFI_SRVC_REGISTER_FAIL"
 #define MSGID_CM_SRVC_REGISTER_FAIL                     "WIFI_CM_REGISTER_FAIL"
-#define MSGID_WAN_SRVC_REGISTER_FAIL                    "WAN_SRVC_REGISTER_FAIL"
-#define MSGID_PAN_SRVC_REGISTER_FAIL                    "PAN_SRVC_REGISTER_FAIL"
 
-#define MSGID_WAN_SRVC_ALLOC_FAIL                       "WAN_SRVC_ALLOC_FAIL"
 #define MSGID_INVALID_STATE                             "INVALID_STATE"
 
 /** main.c */
@@ -133,15 +130,11 @@ extern PmLogContext gLogContext;
 
 /** connman_technology.c */
 #define MSGID_TECHNOLOGY_SET_POWERED_ERROR              "TECH_SET_POWERED_ERR"
-#define MSGID_TECHNOLOGY_SET_TETHERING_ERROR            "TECH_SET_TETHERING_ERR"
-#define MSGID_TECHNOLOGY_SET_TETHERING_IDENTIFIER_ERROR "TECH_SET_TETHERING_IDENTI_ERR"
-#define MSGID_TECHNOLOGY_SET_TETHERING_PASSPHRASE_ERROR "TECH_SET_TETHERING_PASSPH_ERR"
 #define MSGID_TECHNOLOGY_CANCEL_P2P_ERROR               "TECH_CANCEL_P2P_ERR"
 #define MSGID_TECHNOLOGY_CANCEL_WPS_ERROR               "TECH_CANCEL_WPS_ERR"
 #define MSGID_TECHNOLOGY_START_WPS_ERROR                "TECH_START_WPS_ERR"
 #define MSGID_TECHNOLOGY_SET_COUNTRY_CODE_ERROR         "TECH_SET_COUNTRY_CODE_ERR"
 #define MSGID_TECHNOLOGY_DELETE_PROFILE_ERROR           "TECH_DELETE_PROFILE_ERR"
-#define MSGID_TECHNOLOGY_SET_MULTI_CHANNEL_ERROR        "TECH_SET_MULTI_CHANNEL_ERR"
 #define MSGID_TECHNOLOGY_SET_P2P_ERROR                  "TECH_SET_P2P_ERR"
 #define MSGID_TECHNOLOGY_SET_P2P_IDENTIFIER_ERROR       "TECH_SET_IDENTIFIER_ERR"
 #define MSGID_TECHNOLOGY_SET_WFD_ERROR                  "TECH_SET_WFD_ERR"
@@ -199,7 +192,6 @@ extern PmLogContext gLogContext;
 #define MSGID_P2P_DISCONNECT_PEER                       "P2P_DISCONNECT_PEER"
 #define MSGID_P2P_INVITE_PEER                           "P2P_INVITE_PEER"
 #define MSGID_P2P_DISCONNECT_GROUP                      "P2P_DISCONNECT_GRP"
-#define MSGID_P2P_SET_TETHERING                         "P2P_SET_TETHERING"
 #define MSGID_P2P_DELETE_PROFILE                        "P2P_DELETE_PROFILE"
 #define MSGID_P2P_METHODS_LUNA_ERROR                    "P2P_METHODS_LUNA_ERR"
 #define MSGID_SETTINGS_SERVICE_REG_ERROR                "SETTINGS_SRVC_REG_ERR"
@@ -208,22 +200,11 @@ extern PmLogContext gLogContext;
 #define MSGID_LUNA_CREATE_JSON_FAILED                   "LUNA_CREATE_JSON_FAILED"
 #define MSGID_LUNA_SEND_FAILED                          "LUNA_SEND_FAILED"
 
-/** wifi_tethering_service. */
-#define MSGID_TETHERING_METHODS_LUNA_ERROR              "TETHERING_METHODS_LUNA_ERR"
-
 /** wifi_setting.c */
 #define MSGID_SETTING_LPAPP_GET_ERROR                   "SETTING_LPAPP_GET_ERR"
 #define MSGID_SETTING_LPAPP_COPY_ERROR                  "SETTING_LPAPP_COPY_ERR"
 #define MSGID_SETTING_LPAPP_REMOVE_ERROR                "SETTING_LPAPP_REMOVE_ERR"
 #define MSGID_SETTING_LPAPP_SET_ERROR                   "SETTING_LPAPP_SET_ERR"
-
-/** pan_service.c */
-#define MSGID_PAN_LUNA_BUS_ERROR                       "PAN_LUNA_BUS_ERR"
-#define MSGID_PAN_METHODS_LUNA_ERROR                   "PAN_METHODS_LUNA_ERR"
-#define MSGID_PAN_GLOOP_ATTACH_ERROR                   "PAN_GLOOP_ATTACH_ERR"
-#define MSGID_PAN_CONNECT_SERVICE_ERROR                "PAN_CONNECT_SERVICE_ERROR"
-#define MSGID_PAN_SKIPPING_FETCH_PROPERTIES            "PAN_SKIPPING_FETCH_PROPERTIES"
-#define MSGID_PAN_SERVICE_NOT_EXIST                    "PAN_SERVICE_NOT_EXIST"
 
 /** country_code.c */
 #define MSGID_COUNTRY_CODE_INFO                         "COUNTRY_CODE_INFO"
@@ -234,11 +215,6 @@ extern PmLogContext gLogContext;
 #define MSGID_NYX_DEVICE_OPEN_ERROR                     "NYX_DEVICE_OPEN_ERROR"
 #define MSGID_NYX_DEVICE_CLOSE_ERROR                    "NYX_DEVICE_CLOSE_ERROR"
 #define MSGID_NYX_DEINIT_ERROR                          "NYX_DEINIT_ERROR"
-
-/** Wan info codes **/
-#define MSGID_WAN_CONNECT_INFO                          "WAN_CONNECT_INFO"
-#define MSGID_WAN_DISCONNECT_INFO                       "WAN_DISCONNECT_INFO"
-#define MSGID_WAN_SET_HOSTROUTE_ERROR                   "WAN_SET_HOSTROUTE_ERR"
 
 /** json_utils.c **/
 #define MSGID_JSON_KEY_NULL                             "JSON_KEY_NULL"

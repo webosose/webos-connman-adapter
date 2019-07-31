@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,8 +34,6 @@
 #define ETHERNET_SERVICES_CHANGED   1
 #define WIFI_SERVICES_CHANGED       2
 #define P2P_SERVICES_CHANGED        4
-#define CELLULAR_SERVICES_CHANGED   8
-#define BLUETOOTH_SERVICES_CHANGED  16
 
 /**
  * Callback function for handling any changes in connman services
@@ -65,8 +63,6 @@ typedef struct connman_manager
 	GSList  *wifi_services;
 	GSList  *wired_services;
 	GSList  *p2p_services;
-	GSList  *cellular_services;
-	GSList  *bluetooth_services;
 	GSList  *saved_services;
 	GSList  *technologies;
 	GSList  *groups;
@@ -154,26 +150,6 @@ extern connman_technology_t *connman_manager_find_wifi_technology(
  * @return Technology with type "wired"
  */
 extern connman_technology_t *connman_manager_find_ethernet_technology(
-    connman_manager_t *manager);
-
-/**
-* Go through the manager's technologies list and get the technology with type "cellular"
-*
-* @param[IN]  manager A manager instance
-*
-* @return Technology with type "cellular"
-*/
-extern connman_technology_t *connman_manager_find_cellular_technology(
-    connman_manager_t *manager);
-
-/**
-* Go through the manager's technologies list and get the technology with type "bluetooth"
-*
-* @param[IN]  manager A manager instance
-*
-* @return Technology with type "bluetooth"
-*/
-extern connman_technology_t *connman_manager_find_bluetooth_technology(
     connman_manager_t *manager);
 
 /**
@@ -272,11 +248,6 @@ extern gboolean connman_manager_unregister_counter(connman_manager_t *manager,
 
 extern connman_group_t *connman_manager_create_group(connman_manager_t *manager,
         const gchar *ssid, const gchar *passphrase);
-
-/*
- * Get the number of connected station
- */
-extern guint connman_manager_get_sta_count(connman_manager_t *manager);
 
 /**
  * Populate the group's peer_list field with all of the group's peers

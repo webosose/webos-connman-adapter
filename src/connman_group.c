@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,39 +25,6 @@
 #include "connman_manager.h"
 #include "logging.h"
 #include "common.h"
-
-/**
- * @brief Set the group's tethering property
- *
- * @param group Group object to operate on
- * @param enable TRUE to enable tethering or FALSE to disable it
- * @return TRUE if operation was successfull. FALSE otherwise.
- */
-
-gboolean connman_group_set_tethering(connman_group_t *group, gboolean enable)
-{
-	if (NULL == group)
-	{
-		return FALSE;
-	}
-
-	GError *error = NULL;
-
-	connman_interface_group_call_set_property_sync(group->remote,
-	        "Tethering",
-	        g_variant_new_variant(g_variant_new_boolean(enable)),
-	        NULL, &error);
-
-	if (error)
-	{
-		WCALOG_ESCAPED_ERRMSG(MSGID_GROUP_SET_PROPERTY_ERROR, error->message);
-		g_error_free(error);
-		return FALSE;
-	}
-
-	group->tethering = enable;
-	return TRUE;
-}
 
 /**
  * @brief Disconnect from a connman group
@@ -152,10 +119,6 @@ static void __connman_group_update_property(connman_group_t *group,
 	else if (!g_strcmp0(name, "Persistent"))
 	{
 		group->is_persistent = g_variant_get_boolean(val);
-	}
-	else if (!g_strcmp0(name, "Tethering"))
-	{
-		group->tethering = g_variant_get_boolean(val);
 	}
 	else if (!g_strcmp0(name, "Freq"))
 	{

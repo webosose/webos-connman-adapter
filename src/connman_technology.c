@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,101 +69,6 @@ gboolean connman_technology_set_powered(connman_technology_t *technology,
 	}
 
 	technology->powered = state;
-	return TRUE;
-}
-
-/**
- * Enable/Disable tethering the given technology (see header for API details)
- */
-
-extern gboolean connman_technology_set_tethering(connman_technology_t
-        *technology, gboolean state)
-{
-	if (NULL == technology)
-	{
-		return FALSE;
-	}
-
-	GError *error = NULL;
-
-	connman_interface_technology_call_set_property_sync(technology->remote,
-	        "Tethering",
-	        g_variant_new_variant(g_variant_new_boolean(state)),
-	        NULL, &error);
-
-	if (error)
-	{
-		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_TETHERING_ERROR, error->message);
-		g_error_free(error);
-		return FALSE;
-	}
-
-	technology->tethering = state;
-	g_usleep(1000000);
-	return TRUE;
-}
-
-/**
- * Set the name of ssid used in tethering (see header for API details)
- */
-
-extern gboolean connman_technology_set_tethering_identifier(
-    connman_technology_t *technology, const gchar *tethering_identifier)
-{
-	if (NULL == technology)
-	{
-		return FALSE;
-	}
-
-	GError *error = NULL;
-
-	connman_interface_technology_call_set_property_sync(technology->remote,
-	        "TetheringIdentifier",
-	        g_variant_new_variant(g_variant_new_string(tethering_identifier)),
-	        NULL, &error);
-
-	if (error)
-	{
-		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_TETHERING_IDENTIFIER_ERROR,
-		                      error->message);
-		g_error_free(error);
-		return FALSE;
-	}
-
-	g_free(technology->tethering_identifier);
-	technology->tethering_identifier = g_strdup(tethering_identifier);
-	return TRUE;
-}
-
-/**
- * Set the name of ssid used in tethering (see header for API details)
- */
-
-extern gboolean connman_technology_set_tethering_passphrase(
-    connman_technology_t *technology, const gchar *tethering_passphrase)
-{
-	if (NULL == technology)
-	{
-		return FALSE;
-	}
-
-	GError *error = NULL;
-
-	connman_interface_technology_call_set_property_sync(technology->remote,
-	        "TetheringPassphrase",
-	        g_variant_new_variant(g_variant_new_string(tethering_passphrase)),
-	        NULL, &error);
-
-	if (error)
-	{
-		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_TETHERING_PASSPHRASE_ERROR,
-		                      error->message);
-		g_error_free(error);
-		return FALSE;
-	}
-
-	g_free(technology->tethering_passphrase);
-	technology->tethering_passphrase = g_strdup(tethering_passphrase);
 	return TRUE;
 }
 
@@ -275,35 +180,6 @@ gboolean connman_technology_delete_profile(connman_technology_t *technology,
 	return TRUE;
 }
 
-/**
- * Set MultiChannelShedMode value to specified mode (see header for API details)
- */
-
-gboolean connman_technology_set_multi_channel_mode(connman_technology_t
-        *technology, const guint32 mode)
-{
-	if (NULL == technology)
-	{
-		return FALSE;
-	}
-
-	GError *error = NULL;
-
-	connman_interface_technology_call_set_property_sync(technology->remote,
-	        "MultiChannelSchedMode",
-	        g_variant_new_variant(g_variant_new_uint32(mode)),
-	        NULL, &error);
-
-	if (error)
-	{
-		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_MULTI_CHANNEL_ERROR, error->message);
-		g_error_free(error);
-		return FALSE;
-	}
-
-	technology->multi_channel_mode = mode;
-	return TRUE;
-}
 /**
  * Set P2P state (see header for API details)
  */
@@ -656,29 +532,6 @@ static void set_property_value(connman_technology_t *technology,
 	{
 		technology->wfd_rtspport = g_variant_get_uint32(val);
 	}
-	else if (!g_strcmp0(key, "MultiChannelSchedMode"))
-	{
-		technology->multi_channel_mode = g_variant_get_uint32(val);
-	}
-	else if (!g_strcmp0(key, "DiagnosticInfo"))
-	{
-		g_free(technology->diagnostic_info);
-		technology->diagnostic_info = g_variant_dup_string(val, NULL);
-	}
-	else if (!g_strcmp0(key, "Tethering"))
-	{
-		technology->tethering = g_variant_get_boolean(val);
-	}
-	else if (!g_strcmp0(key, "TetheringIdentifier"))
-	{
-		g_free(technology->tethering_identifier);
-		technology->tethering_identifier = g_variant_dup_string(val, NULL);
-	}
-	else if (!g_strcmp0(key, "TetheringPassphrase"))
-	{
-		g_free(technology->tethering_passphrase);
-		technology->tethering_passphrase = g_variant_dup_string(val, NULL);
-	}
 	else if (!g_strcmp0(key, "CountryCode"))
 	{
 		g_free(technology->country_code);
@@ -863,58 +716,6 @@ void connman_technology_register_property_changed_cb(connman_technology_t
 }
 
 /**
- * Register a handler for the technology's "TetheringStaAuthorized" signal.
- */
-void connman_technology_register_sta_authorized_cb(connman_technology_t
-        *technology, connman_common_cb cb, gpointer user_data)
-{
-	if (!cb || !technology)
-	{
-		return;
-	}
-
-	technology->handle_sta_authorized_fn = cb;
-	technology->sta_authorized_data = user_data;
-}
-
-static void tethering_sta_authorized_cb(ConnmanInterfaceTechnology *proxy,
-                                        gpointer user_data)
-{
-	connman_technology_t *technology = user_data;
-
-	if (technology->handle_sta_authorized_fn)
-	{
-		technology->handle_sta_authorized_fn(technology->sta_authorized_data);
-	}
-}
-
-/**
- * Register a handler for the technology's "TetheringStaUnauthorized" signal.
- */
-void connman_technology_register_sta_deauthorized_cb(connman_technology_t
-        *technology, connman_common_cb cb, gpointer user_data)
-{
-	if (!cb || !technology)
-	{
-		return;
-	}
-
-	technology->handle_sta_deauthorized_fn = cb;
-	technology->sta_deauthorized_data = user_data;
-}
-
-static void tethering_sta_deunauthorized_cb(ConnmanInterfaceTechnology *proxy,
-        gpointer user_data)
-{
-	connman_technology_t *technology = user_data;
-
-	if (technology->handle_sta_deauthorized_fn)
-	{
-		technology->handle_sta_deauthorized_fn(technology->sta_deauthorized_data);
-	}
-}
-
-/**
  * Create a new technology instance and set its properties (see header for API details)
  */
 
@@ -948,13 +749,6 @@ connman_technology_t *connman_technology_new(const gchar* path)
 	technology->property_changed_sighandler = g_signal_connect_data(G_OBJECT(
 	            technology->remote), "property-changed",
 	        G_CALLBACK(property_changed_cb), technology, NULL, 0);
-
-	technology->sta_authorized_sighandler = g_signal_connect_data(G_OBJECT(
-	        technology->remote), "tethering-sta-authorized",
-	                                        G_CALLBACK(tethering_sta_authorized_cb), technology, NULL, 0);
-	technology->sta_deauthorized_sighandler = g_signal_connect_data(G_OBJECT(
-	            technology->remote), "tethering-sta-deauthorized",
-	        G_CALLBACK(tethering_sta_deunauthorized_cb), technology, NULL, 0);
 
 	/* If connman has a change in it's properties while we process the data and
 	 * before we register the signals, we do not get the update.
@@ -1002,20 +796,6 @@ void connman_technology_free(connman_technology_t *technology)
 		technology->property_changed_sighandler = 0;
 	}
 
-	if (technology->sta_authorized_sighandler)
-	{
-		g_signal_handler_disconnect(G_OBJECT(technology->remote),
-		                            technology->sta_authorized_sighandler);
-		technology->sta_authorized_sighandler = 0;
-	}
-
-	if (technology->sta_deauthorized_sighandler)
-	{
-		g_signal_handler_disconnect(G_OBJECT(technology->remote),
-		                            technology->sta_deauthorized_sighandler);
-		technology->sta_deauthorized_sighandler = 0;
-	}
-
 	/* If async call to technology is in progress, scan callback will free the technology. */
 	if (technology->calls_pending > 0)
 	{
@@ -1032,9 +812,6 @@ void connman_technology_free(connman_technology_t *technology)
 	technology->name = NULL;
 	g_free(technology->p2p_identifier);
 	g_free(technology->country_code);
-	g_free(technology->diagnostic_info);
-	g_free(technology->tethering_identifier);
-	g_free(technology->tethering_passphrase);
 
 	g_object_unref(technology->remote);
 	technology->remote = NULL;

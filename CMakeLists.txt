@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2018 LG Electronics, Inc.
+# Copyright (c) 2012-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,8 +86,8 @@ set(GDBUS_IF_DIR ${WEBOS_BINARY_CONFIGURED_DIR}/src)
 
 file (MAKE_DIRECTORY ${GDBUS_IF_DIR})
 
-execute_process(COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-namespace ConnmanInterface --generate-c-code 
-			${GDBUS_IF_DIR}/connman-interface --interface-prefix net.connman. 
+execute_process(COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-namespace ConnmanInterface --generate-c-code
+			${GDBUS_IF_DIR}/connman-interface --interface-prefix net.connman.
 			${CMAKE_CURRENT_SOURCE_DIR}/files/xml/connman.xml
 			RESULT_VARIABLE codegen_failed)
 if(codegen_failed)
@@ -131,13 +131,10 @@ file(GLOB SOURCE_FILES
     src/nyx.c
     src/pacrunner_client.c
     src/utils.c
-    src/wifi_tethering_service.c
     src/wifi_profile.c
     src/wifi_service.c
     src/wifi_setting.c
     src/wifi_scan.c
-    src/wan_service.c
-    src/pan_service.c
     src/state_recovery.c
     ${GDBUS_IF_DIR}/connman-interface.c
     ${GDBUS_IF_DIR}/pacrunner-interface.c)

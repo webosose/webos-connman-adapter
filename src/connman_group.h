@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,15 +45,12 @@ typedef struct connman_group
 	gchar *local_address;
 	gboolean is_group_owner;
 	gboolean is_persistent;
-	gboolean tethering;
 	gint freq;
 	GSList *peer_list;
 	gulong sighandler_id;
 	connman_property_changed_cb     handle_property_change_fn;
 } connman_group_t;
 
-extern gboolean connman_group_set_tethering(connman_group_t *group,
-        gboolean state);
 extern gboolean connman_group_disconnect(connman_group_t *group);
 extern gboolean connman_group_invite_peer(connman_group_t *group,
         connman_service_t *service);

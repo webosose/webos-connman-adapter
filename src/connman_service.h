@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -142,7 +142,6 @@ typedef struct connman_service
 	gint type;
 	ipinfo_t ipinfo;
 	proxyinfo_t proxyinfo;
-	GStrv hostroutes;
 	gulong sighandler_id;
 	peer_t peer;
 
@@ -176,8 +175,6 @@ typedef enum
 	CONNMAN_SERVICE_TYPE_ETHERNET,
 	CONNMAN_SERVICE_TYPE_WIFI,
 	CONNMAN_SERVICE_TYPE_P2P,
-	CONNMAN_SERVICE_TYPE_CELLULAR,
-	CONNMAN_SERVICE_TYPE_BLUETOOTH,
 	CONNMAN_SERVICE_TYPE_MAX
 } connman_service_types;
 
@@ -232,24 +229,6 @@ extern gboolean connman_service_type_ethernet(connman_service_t *service);
  * @return TRUE if the service has "Peer" type
  */
 extern gboolean connman_service_type_p2p(connman_service_t *service);
-
-/**
-* Check if the type of the service is wan
-*
-* @param[IN]  service A service instance
-*
-* @return TRUE if the service has "wan" type
-*/
-extern gboolean connman_service_type_wan(connman_service_t *service);
-
-/**
-* Check if the type of the service is bluetooth
-*
-* @param[IN]  service A service instance
-*
-* @return TRUE if the service has "bluetooth" type
-*/
-extern gboolean connman_service_type_bluetooth(connman_service_t *service);
 
 /**
  * Stringify the service connection status to corresponding webos state
@@ -424,14 +403,6 @@ extern void connman_service_register_property_changed_cb(
  */
 extern void connman_service_register_p2p_requests_cb(connman_service_t *service,
         connman_p2p_request_cb func);
-
-/**
- * Gets hostroutes for the connman service
- *
- * @param[IN] service A service instance
- * @param[IN] hostroutes Hostroutes
- */
-gboolean connman_service_set_hostroutes(connman_service_t *service, GStrv hostroutes);
 
 /**
  * Create a new connman service instance and set its properties
