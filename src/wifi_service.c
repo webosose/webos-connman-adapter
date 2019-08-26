@@ -87,6 +87,11 @@ typedef struct current_service_data
 	connection_settings_t *settings;
 } current_service_data_t;
 
+typedef struct profile_info
+{
+       guint profile_id;
+       char *service_path;
+} profile_info_t;
 
 static gboolean check_wifi_services_for_updates(void);
 
@@ -460,7 +465,11 @@ static void wifi_send_status_to_subscribers(void)
  */
 static gboolean delete_profile_if_not_connected(gpointer user_data)
 {
-	char* service_path = (char*) user_data;
+	profile_info_t* failed_connection_profile_info = (profile_info_t*) user_data;
+	if(!failed_connection_profile_info && !failed_connection_profile_info->service_path)
+	{
+		return FALSE;
+	}
 
 	if (NULL == manager)
 	{
@@ -469,12 +478,12 @@ static gboolean delete_profile_if_not_connected(gpointer user_data)
 
 	connman_service_t *service = connman_manager_find_service_by_path(
 			manager->wifi_services,
-			service_path);
+			failed_connection_profile_info->service_path);
 
 	if (NULL == service)
 	{
 		WCALOG_INFO(MSGID_WIFI_SERVICE_NOT_EXIST, 0, "Service %s doesn't exist",
-		            service_path);
+		            failed_connection_profile_info->service_path);
 		goto cleanup;
 	}
 
@@ -486,7 +495,7 @@ static gboolean delete_profile_if_not_connected(gpointer user_data)
 		wifi_profile_t *profile = get_profile_by_ssid_security(service->name,
 		                          service->security[0]);
 
-		if (NULL != profile)
+		if (NULL != profile && (failed_connection_profile_info->profile_id == profile->profile_id))
 		{
 			delete_profile(profile);
 		}
@@ -498,6 +507,8 @@ static gboolean delete_profile_if_not_connected(gpointer user_data)
 	}
 
 cleanup:
+	g_free(failed_connection_profile_info->service_path);
+	failed_connection_profile_info->service_path = NULL;
 	g_free(user_data);
 	return FALSE;
 }
@@ -514,19 +525,19 @@ cleanup:
  * in src/service.c of the connman source tree for all currently handled errors.
  */
 
-static void handle_failed_connection_request(gpointer user_data)
+static gboolean handle_failed_connection_request(gpointer user_data)
 {
 	const char *error_message = "Unknown error";
 	unsigned int error_code = WCA_API_ERROR_UNKNOWN;
 
 	if (NULL == manager)
 	{
-		return;
+		return FALSE;
 	}
 
 	if (NULL == current_connect_req)
 	{
-		return;
+		return FALSE;
 	}
 
 	current_service_data_t *service_data = current_connect_req->user_data;
@@ -620,8 +631,16 @@ static void handle_failed_connection_request(gpointer user_data)
 		// In case of enterprise networks we always create a profile (even before connecting to it),
 		// so in case the connection fails, we should delete the profile and the corresponding config file
 		// Give it 2 sec for service to auto-connect
-		char* service_name = g_strdup(service->path);
-		g_timeout_add_seconds(5, delete_profile_if_not_connected, service_name);
+		wifi_profile_t *profile = get_profile_by_ssid_security(service->name,
+		                          service->security[0]);
+		if (profile) {
+			WCALOG_DEBUG(MSGID_WIFI_CONNECT_SERVICE, "profile present for failed connection so delete it after 5sec");
+			profile_info_t* failed_connection_profile_info = g_new0(profile_info_t, 1);
+			failed_connection_profile_info->service_path = g_strdup(service->path);
+			failed_connection_profile_info->profile_id = profile->profile_id;
+			g_timeout_add_seconds(5, delete_profile_if_not_connected, failed_connection_profile_info);
+		} else
+			connman_service_remove(service);
 	}
 
 #ifndef ENABLE_SINGLE_PROFILE
@@ -638,6 +657,7 @@ cleanup:
 	{
 		current_connect_req_free();
 	}
+	return FALSE;
 }
 
 /**
@@ -1673,17 +1693,8 @@ static void connect_wifi_with_ssid(const char *ssid, wifi_profile_t *profile,
 	 * have to wait until the scan has finished as connman needs to issue another one
 	 * for the hidden network to be able to connect it */
 
-	if (hidden)
-	{
-		wifi_scan_execute_when_scan_done(connect_after_scan_cb, NULL);
-	}
-	else if (!connman_service_connect(service, service_connect_callback,
-	                                  service_req))
-	{
-		current_connect_req = NULL;
-		LSMessageReplyErrorUnknown(service_req->handle, service_req->message);
-		goto cleanup;
-	}
+	// Connect after scan is done
+	wifi_scan_execute_when_scan_done(connect_after_scan_cb, NULL);
 
 	goto exit;
 

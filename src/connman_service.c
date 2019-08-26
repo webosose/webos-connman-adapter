@@ -29,7 +29,7 @@
 #include "connectionmanager_service.h"
 
 /* gdbus default timeout is 25 seconds */
-#define DBUS_CALL_TIMEOUT   (60 * 1000)
+#define DBUS_CALL_TIMEOUT   (120 * 1000)
 
 /**
  * Check if the type of the service is wifi (see header for API details)
