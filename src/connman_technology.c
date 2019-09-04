@@ -1071,5 +1071,7 @@ void connman_technology_free(connman_technology_t *technology)
 	g_object_unref(technology->remote);
 	technology->remote = NULL;
 
+	g_strfreev(technology->station_mac);
+
 	g_free(technology);
 }

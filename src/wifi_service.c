@@ -1991,7 +1991,12 @@ static void technology_property_changed_callback(gpointer data,
 			wifi_send_status_to_subscribers();
 		}
 
-		if(g_strcmp0(property, "StaCount") == 0) {
+		if(g_strcmp0(property, "StationMac") == 0) {
+			GVariant *va = g_variant_get_child_value(value, 0);
+			g_strfreev(technology->station_mac);
+			technology->station_mac = g_variant_dup_strv(va, NULL);
+
+			g_variant_unref(va);
 			send_sta_count_to_subscribers();
 		}
 	}

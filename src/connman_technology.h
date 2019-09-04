@@ -74,6 +74,7 @@ typedef struct connman_technology
 
 	gboolean removed; /* If true, the technology has been removed and should be deleted when callbacks complete*/
 	gint32 calls_pending; /* Number of connman DBUS calls pending. */
+	GStrv station_mac;
 } connman_technology_t;
 
 
