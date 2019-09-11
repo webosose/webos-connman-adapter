@@ -466,7 +466,7 @@ static void wifi_send_status_to_subscribers(void)
 static gboolean delete_profile_if_not_connected(gpointer user_data)
 {
 	profile_info_t* failed_connection_profile_info = (profile_info_t*) user_data;
-	if(!failed_connection_profile_info && !failed_connection_profile_info->service_path)
+	if((!failed_connection_profile_info) || !(failed_connection_profile_info->service_path))
 	{
 		return FALSE;
 	}
