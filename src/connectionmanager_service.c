@@ -76,6 +76,7 @@ gboolean wired_connected = FALSE;
 gboolean wifi_connected = FALSE;
 gboolean p2p_connected = FALSE;
 guint block_getstatus_response = 0;
+gboolean old_wifi_tethering = FALSE;
 gboolean wired_plugged = FALSE;
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
@@ -422,6 +423,8 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	            jstring_create("disconnected"));
 	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("state"),
 	            jstring_create("disconnected"));
+	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("tetheringEnabled"),
+	            jboolean_create(is_wifi_tethering()));
 	jobject_put(disconnected_p2p_status, J_CSTR_TO_JVAL("state"),
 	            jstring_create("disconnected"));
 
@@ -456,6 +459,10 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	if (NULL != connected_wifi_service)
 	{
 		update_connection_status(connected_wifi_service, &connected_wifi_status);
+
+		// When we're connected to a WiFi service we can't have tethering enabled
+		jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("tetheringEnabled"),
+		            jboolean_create(false));
 
 		jobject_put(*reply, J_CSTR_TO_JVAL("wifi"), connected_wifi_status);
 		j_release(&disconnected_wifi_status);
@@ -546,6 +553,12 @@ static gboolean check_update_is_needed(void)
 	if (!manager)
 	{
 		return FALSE;
+	}
+
+	if (old_wifi_tethering != is_wifi_tethering())
+	{
+		old_wifi_tethering = is_wifi_tethering();
+		needed = TRUE;
 	}
 
 	gboolean old_online_status = online_status;
@@ -1484,6 +1497,11 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 		}
 		else
 		{
+			if (enable_offline && is_wifi_tethering())
+			{
+				set_wifi_tethering(!enable_offline);
+			}
+
 			connman_manager_set_offlinemode(manager, enable_offline);
 		}
 

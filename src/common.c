@@ -85,6 +85,19 @@ gboolean is_wifi_powered(void)
 }
 
 /**
+ *  @brief Check wether the wifi technology is currently tethering (the "Tethering"
+ *         property has the value true)
+ *
+ * @return Returns true if wifi technology is currently tethering, false otherwise.
+ */
+gboolean is_wifi_tethering(void)
+{
+	connman_technology_t *technology = connman_manager_find_wifi_technology(
+	                                       manager);
+	return (NULL != technology) && technology->tethering;
+}
+
+/**
  *  @brief Check if the wifi technology is available. If the technology is not available
  *  an error message is send to the supplied luna message handle.
  *

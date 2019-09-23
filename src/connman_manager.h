@@ -249,6 +249,11 @@ extern gboolean connman_manager_unregister_counter(connman_manager_t *manager,
 extern connman_group_t *connman_manager_create_group(connman_manager_t *manager,
         const gchar *ssid, const gchar *passphrase);
 
+/*
+ * Get the number of connected station
+ */
+extern guint connman_manager_get_sta_count(connman_manager_t *manager);
+
 /**
  * Populate the group's peer_list field with all of the group's peers
  *

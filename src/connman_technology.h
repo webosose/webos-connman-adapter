@@ -45,8 +45,11 @@ typedef struct connman_technology
 	gchar *path;
 	gchar *p2p_identifier;
 	gchar *country_code;
+	gchar *tethering_identifier;
+	gchar *tethering_passphrase;
 	gboolean powered;
 	gboolean connected;
+	gboolean tethering;
 	gboolean p2p;
 	gboolean wfd;
 	gboolean p2p_listen;
@@ -58,6 +61,12 @@ typedef struct connman_technology
 	guint32 wfd_rtspport;
 	gulong property_changed_sighandler;
 	connman_property_changed_cb handle_property_changed_fn;
+	gulong sta_authorized_sighandler;
+	connman_common_cb handle_sta_authorized_fn;
+	gpointer sta_authorized_data;
+	gulong sta_deauthorized_sighandler;
+	connman_common_cb handle_sta_deauthorized_fn;
+	gpointer sta_deauthorized_data;
 	connman_common_cb handle_after_scan_fn;
 	gpointer after_scan_data;
 
@@ -91,6 +100,39 @@ typedef struct connman_technology_interface
  */
 extern int connman_technology_set_powered(connman_technology_t *technology,
         gboolean state, bool* not_supported);
+
+/**
+ * Enable/Disable tethering the given technology
+ *
+ * @param[IN]  technology A technology instance
+ * @param[IN]  state TRUE for power on, FALSE for off
+ *
+ * @return FALSE for any error, TRUE otherwise
+ */
+extern gboolean connman_technology_set_tethering(connman_technology_t
+        *technology, gboolean state);
+
+/**
+ * Set the name of ssid used in tethering
+ *
+ * @param[IN]  technology A technology instance
+ * @param[IN]  tethering_identifier of the tethering
+ *
+ * @return FALSE for any error, TRUE otherwise
+ */
+extern gboolean connman_technology_set_tethering_identifier(
+    connman_technology_t *technology, const gchar *tethering_identifier);
+
+/**
+ * Set the name of passphrase used in tethering
+ *
+ * @param[IN]  technology A technology instance
+ * @param[IN]  tethering_passphrase of the tethering
+ *
+ * @return FALSE for any error, TRUE otherwise
+ */
+extern gboolean connman_technology_set_tethering_passphrase(
+    connman_technology_t *technology, const gchar *tethering_passphrase);
 
 /**
  * Enable/disable wifi-direct technology
@@ -277,6 +319,26 @@ extern gboolean connman_technology_set_listen_params(connman_technology_t *techn
  */
 extern void connman_technology_register_property_changed_cb(
     connman_technology_t *technology, connman_property_changed_cb func);
+
+/**
+ * @brief Register a handler for the technology's "TetheringStaAuthorized" signal.
+ *
+ * @param[IN] technology A technology instance
+ * @param[IN] cb Handler function to register.
+ * @param[IN] user_data User data passed with the callback when called.
+ */
+extern void connman_technology_register_sta_authorized_cb(
+    connman_technology_t *technology, connman_common_cb cb, gpointer user_data);
+
+/**
+ * @brief Register a handler for the technology's "TetheringStaDeauthorized" signal.
+ *
+ * @param[IN] technology A technology instance
+ * @param[IN] cb Handler function to register.
+ * @param[IN] user_data User data passed with the callback when called.
+ */
+extern void connman_technology_register_sta_deauthorized_cb(
+    connman_technology_t *technology, connman_common_cb cb, gpointer user_data);
 
 /**
  * Fetch all the properties for a technology instance and save the new values

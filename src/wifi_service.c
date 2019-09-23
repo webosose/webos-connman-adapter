@@ -56,6 +56,7 @@ errorText | Yes | String | Error description
 #include "common.h"
 #include "connectionmanager_service.h"
 #include "logging.h"
+#include "wifi_tethering_service.h"
 #include "errors.h"
 #include "nyx.h"
 
@@ -381,7 +382,10 @@ static void create_wifi_getstatus_response(jvalue_ref *reply, bool subscribed)
 
 	jobject_put(*reply, J_CSTR_TO_JVAL("wakeOnWlan"), jstring_create("disabled"));
 
-	gboolean powered = is_wifi_powered();
+	jobject_put(*reply, J_CSTR_TO_JVAL("tetheringEnabled"),
+	            jboolean_create(is_wifi_tethering()));
+
+	gboolean powered = is_wifi_powered() && !is_wifi_tethering();
 
 	/* Get the service which is connecting or already in connected state */
 	connman_service_t *connected_service = connman_manager_get_connected_service(
@@ -1848,6 +1852,22 @@ void send_findnetworks_status_to_subscribers()
 	j_release(&findnetworks_reply);
 }
 
+static int convert_frequency_to_channel(int freq)
+{
+	if (freq >= 2412 && freq <= 2484)
+	{
+		return (freq - 2412) / 5 + 1;
+	}
+	else if (freq >= 5170 && freq <= 5825)
+	{
+		return (freq - 5170) / 5 + 34;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 static gboolean signal_polling_cb(gpointer user_data)
 {
 	connman_service_t *connected_service = connman_manager_get_connected_service(
@@ -1959,6 +1979,18 @@ static void technology_property_changed_callback(gpointer data,
 
 		}
 
+		if (g_strcmp0(property, "Tethering") == 0 ||
+		    g_strcmp0(property, "TetheringIdentifier") == 0 ||
+		    g_strcmp0(property, "TetheringPassphrase") == 0)
+		{
+			send_tethering_state_to_subscribers();
+			connectionmanager_send_status_to_subscribers();
+			wifi_send_status_to_subscribers();
+		}
+
+		if(g_strcmp0(property, "StaCount") == 0) {
+			send_sta_count_to_subscribers();
+		}
 	}
 	else if (technology == connman_manager_find_ethernet_technology(manager))
 	{

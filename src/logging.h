@@ -130,6 +130,9 @@ extern PmLogContext gLogContext;
 
 /** connman_technology.c */
 #define MSGID_TECHNOLOGY_SET_POWERED_ERROR              "TECH_SET_POWERED_ERR"
+#define MSGID_TECHNOLOGY_SET_TETHERING_ERROR            "TECH_SET_TETHERING_ERR"
+#define MSGID_TECHNOLOGY_SET_TETHERING_IDENTIFIER_ERROR "TECH_SET_TETHERING_IDENTI_ERR"
+#define MSGID_TECHNOLOGY_SET_TETHERING_PASSPHRASE_ERROR "TECH_SET_TETHERING_PASSPH_ERR"
 #define MSGID_TECHNOLOGY_CANCEL_P2P_ERROR               "TECH_CANCEL_P2P_ERR"
 #define MSGID_TECHNOLOGY_CANCEL_WPS_ERROR               "TECH_CANCEL_WPS_ERR"
 #define MSGID_TECHNOLOGY_START_WPS_ERROR                "TECH_START_WPS_ERR"
@@ -192,6 +195,7 @@ extern PmLogContext gLogContext;
 #define MSGID_P2P_DISCONNECT_PEER                       "P2P_DISCONNECT_PEER"
 #define MSGID_P2P_INVITE_PEER                           "P2P_INVITE_PEER"
 #define MSGID_P2P_DISCONNECT_GROUP                      "P2P_DISCONNECT_GRP"
+#define MSGID_P2P_SET_TETHERING                         "P2P_SET_TETHERING"
 #define MSGID_P2P_DELETE_PROFILE                        "P2P_DELETE_PROFILE"
 #define MSGID_P2P_METHODS_LUNA_ERROR                    "P2P_METHODS_LUNA_ERR"
 #define MSGID_SETTINGS_SERVICE_REG_ERROR                "SETTINGS_SRVC_REG_ERR"
@@ -199,6 +203,9 @@ extern PmLogContext gLogContext;
 /* lunaservice_utils.c */
 #define MSGID_LUNA_CREATE_JSON_FAILED                   "LUNA_CREATE_JSON_FAILED"
 #define MSGID_LUNA_SEND_FAILED                          "LUNA_SEND_FAILED"
+
+/** wifi_tethering_service. */
+#define MSGID_TETHERING_METHODS_LUNA_ERROR              "TETHERING_METHODS_LUNA_ERR"
 
 /** wifi_setting.c */
 #define MSGID_SETTING_LPAPP_GET_ERROR                   "SETTING_LPAPP_GET_ERR"
