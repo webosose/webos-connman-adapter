@@ -932,6 +932,28 @@ connman_group_t *connman_manager_create_group(connman_manager_t *manager,
 	return group;
 }
 
+/*
+ * Get the number of connected station
+ */
+guint connman_manager_get_sta_count(connman_manager_t *manager)
+{
+	if (NULL == manager)
+		return FALSE;
+
+	GError *error = NULL;
+	guint sta_count = 0;
+
+	connman_interface_manager_call_get_sta_count_sync(manager->remote, &sta_count, NULL, &error);
+
+	if (error)
+	{
+		g_error_free(error);
+		return 0;
+	}
+
+	return sta_count;
+}
+
 /**
  * Traverse through the given service list, comparing each service with the path provided
  * returning the service with the matching path (See header for API details)

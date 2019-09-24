@@ -131,6 +131,7 @@ file(GLOB SOURCE_FILES
     src/nyx.c
     src/pacrunner_client.c
     src/utils.c
+    src/wifi_tethering_service.c
     src/wifi_profile.c
     src/wifi_service.c
     src/wifi_setting.c

@@ -1066,6 +1066,79 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 			                            CONNMAN_SERVICE_CHANGE_CATEGORY_FINDNETWORKS);
 		}
 	}
+	else if (!g_strcmp0(property, "BSS"))
+	{
+		if (service->bss != NULL)
+		{
+			g_array_free(service->bss ,TRUE);
+			service->bss = NULL;
+		}
+
+		gsize len = g_variant_n_children(va);
+		gsize j;
+		GArray* array = g_array_sized_new(FALSE, FALSE, sizeof(bssinfo_t), len);
+
+		for (j = 0; j < len; j++)
+		{
+			/* FIXME: Remove the extra struct from connman response? */
+			GVariant *temp = g_variant_get_child_value(va, j);
+			GVariant *bss_entry = g_variant_get_child_value(temp, 0);
+			g_variant_unref(temp);
+
+			bssinfo_t bss_info;
+
+			GVariant *bss_v = g_variant_lookup_value(bss_entry, "Id", G_VARIANT_TYPE_STRING);
+			GVariant *signal_v = g_variant_lookup_value(bss_entry, "Signal", G_VARIANT_TYPE_INT32);
+			GVariant *frequency_v = g_variant_lookup_value(bss_entry, "Frequency", G_VARIANT_TYPE_INT32);
+			if (!bss_v || !signal_v  || !frequency_v)
+			{
+				WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Missing some fields in BSS section");
+			}
+
+			if (bss_v)
+			{
+				gsize length;
+				const char* bss = g_variant_get_string(bss_v, &length);
+
+				if (length > 17)
+				{
+					WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Incorrect bssid length, %i, truncting", length);
+				}
+
+				g_strlcpy(bss_info.bssid, bss, 18);
+				g_variant_unref(bss_v);
+			}
+			else
+			{
+				bss_info.bssid[0] = 0;
+			}
+
+			if (signal_v)
+			{
+				bss_info.signal = g_variant_get_int32(signal_v);
+				g_variant_unref(signal_v);
+			}
+			else
+			{
+				bss_info.signal = 0;
+			}
+
+			if (frequency_v)
+			{
+				bss_info.frequency = g_variant_get_int32(frequency_v);
+				g_variant_unref(frequency_v);
+			}
+			else
+			{
+				bss_info.frequency = 0;
+			}
+
+			g_variant_unref(bss_entry);
+			array = g_array_append_val(array, bss_info);
+		}
+
+		service->bss = array;
+	}
 	else if (!g_strcmp0(property, "Online"))
 	{
 		connman_service_advance_online_state(service, va);

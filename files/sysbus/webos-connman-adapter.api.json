@@ -26,7 +26,10 @@
         "com.webos.service.wifi/getstatus",
         "com.webos.service.wifi/scan",
         "com.webos.service.wifi/setstate",
-        "com.webos.service.wifi/startwps"
+        "com.webos.service.wifi/startwps",
+        "com.webos.service.wifi/tethering/setState",
+        "com.webos.service.wifi/tethering/getState",
+        "com.webos.service.wifi/tethering/getStationCount"
     ],
     "networking": [
         "com.webos.service.connectionmanager/checkinternetstatus",
