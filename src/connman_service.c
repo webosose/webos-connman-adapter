@@ -1097,6 +1097,7 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 
 			if (bss_v)
 			{
+				gsize i;
 				gsize length;
 				const char* bss = g_variant_get_string(bss_v, &length);
 
@@ -1105,7 +1106,11 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 					WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Incorrect bssid length, %i, truncting", length);
 				}
 
-				g_strlcpy(bss_info.bssid, bss, 18);
+				i = g_strlcpy(bss_info.bssid, bss, 18);
+				if (i != strlen(bss))
+				{
+					WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Failed to copy bssid info.");
+				}
 				g_variant_unref(bss_v);
 			}
 			else

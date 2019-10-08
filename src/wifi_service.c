@@ -3517,6 +3517,9 @@ static bool set_country_code(const char* countryCode)
 		return false;
 	}
 
+	g_free(command);
+	pclose(fp);
+
 	return true;
 }
 
@@ -3627,12 +3630,19 @@ static bool get_country_code()
 	connman_technology_t *technology = connman_manager_find_wifi_technology(manager);
 
 	if (NULL == technology)
+	{
+		pclose(fp);
+		g_free(command);
 		return false;
+	}
 
 	if (NULL != technology->country_code)
 		g_free(technology->country_code);
 
 	technology->country_code = g_strndup(countryCodeBuff, MAX_COUNTRY_CODE_LENGTH);
+
+	pclose(fp);
+	g_free(command);
 
 	return true;
 }
