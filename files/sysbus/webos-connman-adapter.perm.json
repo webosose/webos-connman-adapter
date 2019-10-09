@@ -1,11 +1,11 @@
 {
     "com.webos.service.wifi": [
-        "settings",
+        "settings.read",
         "devices",
         "networking.internal"
     ],
     "com.webos.service.connectionmanager": [
-        "settings",
+        "settings.read",
         "devices",
         "networking.internal"
     ]
