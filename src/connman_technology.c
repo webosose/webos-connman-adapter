@@ -98,7 +98,6 @@ extern gboolean connman_technology_set_tethering(connman_technology_t
 		return FALSE;
 	}
 
-	technology->tethering = state;
 	g_usleep(1000000);
 	return TRUE;
 }
@@ -130,8 +129,6 @@ extern gboolean connman_technology_set_tethering_identifier(
 		return FALSE;
 	}
 
-	g_free(technology->tethering_identifier);
-	technology->tethering_identifier = g_strdup(tethering_identifier);
 	return TRUE;
 }
 
@@ -162,8 +159,6 @@ extern gboolean connman_technology_set_tethering_passphrase(
 		return FALSE;
 	}
 
-	g_free(technology->tethering_passphrase);
-	technology->tethering_passphrase = g_strdup(tethering_passphrase);
 	return TRUE;
 }
 
@@ -193,7 +188,6 @@ gboolean connman_technology_set_tethering_channel(connman_technology_t
 		return FALSE;
 	}
 
-	technology->tethering_channel = channel;
 	return TRUE;
 }
 
@@ -224,8 +218,6 @@ extern gboolean connman_technology_set_tethering_ipaddress(
 		return FALSE;
 	}
 
-	g_free(technology->tethering_ipaddress);
-	technology->tethering_ipaddress = g_strdup(tethering_ipaddress);
 	return TRUE;
 }
 
