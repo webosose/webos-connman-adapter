@@ -1127,6 +1127,7 @@ void sync_network_configs_with_profiles(void)
 
 		if (config_pathname == NULL)
 		{
+			g_free(abs_filename);
 			break;
 		}
 
