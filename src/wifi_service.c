@@ -58,7 +58,6 @@ errorText | Yes | String | Error description
 #include "logging.h"
 #include "wifi_tethering_service.h"
 #include "errors.h"
-#include "nyx.h"
 
 /* Range for converting signal strength to signal bars */
 #define MID_SIGNAL_RANGE_LOW    55
@@ -640,7 +639,7 @@ static gboolean handle_failed_connection_request(gpointer user_data)
 		wifi_profile_t *profile = get_profile_by_ssid_security(service->name,
 		                          service->security[0]);
 		if (profile) {
-			WCALOG_DEBUG(MSGID_WIFI_CONNECT_SERVICE, "profile present for failed connection so delete it after 5sec");
+			WCALOG_DEBUG("profile present for failed connection so delete it after 5sec");
 			profile_info_t* failed_connection_profile_info = g_new0(profile_info_t, 1);
 			failed_connection_profile_info->service_path = g_strdup(service->path);
 			failed_connection_profile_info->profile_id = profile->profile_id;
