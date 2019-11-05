@@ -43,7 +43,6 @@ errorText | Yes | String | Error description
 #include <time.h>
 #include <string.h>
 #include <pbnjson.h>
-#include <errno.h>
 
 #include "common.h"
 #include "connman_manager.h"

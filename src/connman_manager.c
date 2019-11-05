@@ -24,7 +24,6 @@
 #include "connman_manager.h"
 #include "logging.h"
 #include "connectionmanager_service.h"
-#include "utils.h"
 
 
 wca_support_connman_update_callbacks *connman_update_callbacks = { { NULL } };
