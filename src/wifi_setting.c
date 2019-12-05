@@ -770,6 +770,7 @@ gboolean change_network_passphrase(const char *ssid, const char *security,
 
 	g_free(pathname);
 	g_free(config_group);
+	g_key_file_free(keyfile);
 	return ret;
 }
 
@@ -810,6 +811,7 @@ gboolean change_network_ipv4(const char *ssid, const char *security,
 	g_free(ipv4str);
 	g_free(pathname);
 	g_free(config_group);
+	g_key_file_free(keyfile);
 	return ret;
 }
 
@@ -851,6 +853,7 @@ gboolean change_network_ipv6(const char *ssid, const char *security,
 	g_free(ipv6str);
 	g_free(pathname);
 	g_free(config_group);
+	g_key_file_free(keyfile);
 	return ret;
 }
 
@@ -902,6 +905,7 @@ gboolean change_network_dns(const char *ssid, const char *security,
 	g_free(dnsstr);
 	g_free(pathname);
 	g_free(config_group);
+	g_key_file_free(keyfile);
 	return ret;
 }
 
@@ -939,6 +943,7 @@ gboolean change_network_remove_entry(const char *ssid, const char *security,
 
 	g_free(pathname);
 	g_free(config_group);
+	g_key_file_free(keyfile);
 	return ret;
 
 }
@@ -1030,6 +1035,7 @@ gboolean check_profile_or_create(const char *file, gchar **pathname)
 	}
 
 	g_strfreev(groups);
+	g_key_file_free(keyfile);
 	return ret;
 }
 
