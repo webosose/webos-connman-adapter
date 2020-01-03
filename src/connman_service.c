@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1103,7 +1103,7 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 
 				if (length > 17)
 				{
-					WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Incorrect bssid length, %i, truncting", length);
+					WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Incorrect bssid length, %lu, truncting", length);
 				}
 
 				i = g_strlcpy(bss_info.bssid, bss, 18);
@@ -1501,14 +1501,19 @@ void connman_service_update_properties(connman_service_t *service,
 				if (bss_v)
 				{
 					gsize length;
+					gsize i;
 					const char* bss = g_variant_get_string(bss_v, &length);
 
 					if (length > 17)
 					{
-						WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Incorrect bssid length, %i, truncting", length);
+						WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Incorrect bssid length, %lu, truncting", length);
 					}
 
-					g_strlcpy(bss_info.bssid, bss, 18);
+					i = g_strlcpy(bss_info.bssid, bss, 18);
+					if (i != strlen(bss))
+					{
+						WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Failed to copy bssid information");
+					}
 					g_variant_unref(bss_v);
 				}
 				else

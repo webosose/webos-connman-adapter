@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,7 +140,7 @@ static void update_connection_status(connman_service_t *connected_service,
 
 		for (i = 0; i < g_strv_length(connected_service->ipinfo.dns); i++)
 		{
-			g_snprintf(dns_str, 16, "dns%d", i + 1);
+			g_snprintf(dns_str, 16, "dns%lu", i + 1);
 			jobject_put(*status, jstring_create(dns_str),
 			            jstring_create(connected_service->ipinfo.dns[i]));
 		}
@@ -1147,6 +1147,7 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 	           gatewayObj = {0};
 	ipv6info_t ipv6 = {0};
 	gchar *ssid = NULL;
+	connman_service_t *service = NULL;
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("method"), &methodObj))
 	{
@@ -1194,7 +1195,7 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 		jstring_free_buffer(ssid_buf);
 	}
 
-	connman_service_t *service = retrieve_service_by_ssid(ssid);
+	service = retrieve_service_by_ssid(ssid);
 
 	if (NULL != service)
 	{
@@ -1321,6 +1322,7 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 	jvalue_ref ssidObj = {0}, dnsObj = {0};
 	GStrv dns = NULL;
 	gchar *ssid = NULL;
+	connman_service_t *service = NULL;
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dns"), &dnsObj))
 	{
@@ -1349,7 +1351,7 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 		jstring_free_buffer(ssid_buf);
 	}
 
-	connman_service_t *service = retrieve_service_by_ssid(ssid);
+	service = retrieve_service_by_ssid(ssid);
 
 	if (NULL != service)
 	{
@@ -1642,12 +1644,17 @@ static void getinfo_update(void)
 
 	char wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
 	char wired_mac_address[MAC_ADDR_STRING_LEN]={0};
+	gsize i;
 
 	if (retrieve_wifi_mac_address(wifi_mac_address, MAC_ADDR_STRING_LEN))
 	{
 		if (g_strcmp0(getinfo_cur_wifi_mac_address, wifi_mac_address))
 		{
-			g_strlcpy(getinfo_cur_wifi_mac_address, wifi_mac_address, MAC_ADDR_STRING_LEN);
+			i = g_strlcpy(getinfo_cur_wifi_mac_address, wifi_mac_address, MAC_ADDR_STRING_LEN);
+			if (i != strlen(wifi_mac_address))
+			{
+				WCALOG_ERROR(MSGID_WIFI_MAC_ADDR_ERROR,0,"Failed to copy mac address for wifi interface");
+			}
 		}
 	}
 	else
@@ -1665,7 +1672,11 @@ static void getinfo_update(void)
 	{
 		if (g_strcmp0(getinfo_cur_wired_mac_address, wired_mac_address))
 		{
-			g_strlcpy(getinfo_cur_wired_mac_address, wired_mac_address, MAC_ADDR_STRING_LEN);
+			i = g_strlcpy(getinfo_cur_wired_mac_address, wired_mac_address, MAC_ADDR_STRING_LEN);
+			if (i != strlen(wired_mac_address))
+			{
+				WCALOG_ERROR(MSGID_WIRED_MAC_ADDR_ERROR,0,"Failed to copy mac address for wired interface");
+			}
 		}
 	}
 	else
@@ -1743,7 +1754,10 @@ static bool handle_get_info_command(LSHandle *sh, LSMessage *message,
 	}
 
 	getinfo_add_response(&reply, subscribed);
-	LSMessageReply(sh, message, jvalue_tostring(reply, jschema_all()), &lserror);
+	if (!LSMessageReply(sh, message, jvalue_tostring(reply, jschema_all()), &lserror))
+	{
+		goto cleanup;
+	}
 
 cleanup:
 
@@ -1806,6 +1820,9 @@ static bool handle_check_internet_status_command(LSHandle *sh,
 	LSErrorInit(&lserror);
 	gboolean wired_status = TRUE, wifi_status = TRUE;
 
+	connman_service_t *connected_wired_service = NULL;
+	connman_service_t *connected_wifi_service = NULL;
+
 	if (block_getstatus_response)
 	{
 		goto exit;
@@ -1814,8 +1831,8 @@ static bool handle_check_internet_status_command(LSHandle *sh,
 	if (!connman_status_check(manager, sh, message))
 		return true;
 
-	connman_service_t *connected_wired_service =
-	    connman_manager_get_connected_service(manager->wired_services);
+	connected_wired_service =
+		connman_manager_get_connected_service(manager->wired_services);
 
 	if (connected_wired_service)
 	{
@@ -1823,8 +1840,8 @@ static bool handle_check_internet_status_command(LSHandle *sh,
 		               TRUE);
 	}
 
-	connman_service_t *connected_wifi_service =
-	    connman_manager_get_connected_service(manager->wifi_services);
+	connected_wifi_service =
+		connman_manager_get_connected_service(manager->wifi_services);
 
 	if (connected_wifi_service)
 	{

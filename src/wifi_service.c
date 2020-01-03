@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -321,7 +321,7 @@ static void add_connected_network_status(jvalue_ref *reply,
 
 			for (i = 0; i < g_strv_length(connected_service->ipinfo.dns); i++)
 			{
-				g_snprintf(dns_str, 16, "dns%d", i + 1);
+				g_snprintf(dns_str, 16, "dns%lu", i + 1);
 				jobject_put(ip_info, jstring_create(dns_str),
 				            jstring_create(connected_service->ipinfo.dns[i]));
 			}
@@ -471,6 +471,9 @@ static void wifi_send_status_to_subscribers(void)
 static gboolean delete_profile_if_not_connected(gpointer user_data)
 {
 	profile_info_t* failed_connection_profile_info = (profile_info_t*) user_data;
+	connman_service_t *connected_service = NULL;
+	connman_service_t *service = NULL;
+
 	if((!failed_connection_profile_info) || !(failed_connection_profile_info->service_path))
 	{
 		return FALSE;
@@ -481,7 +484,7 @@ static gboolean delete_profile_if_not_connected(gpointer user_data)
 		goto cleanup;
 	}
 
-	connman_service_t *service = connman_manager_find_service_by_path(
+	service = connman_manager_find_service_by_path(
 			manager->wifi_services,
 			failed_connection_profile_info->service_path);
 
@@ -492,7 +495,7 @@ static gboolean delete_profile_if_not_connected(gpointer user_data)
 		goto cleanup;
 	}
 
-	connman_service_t *connected_service = connman_manager_get_connected_service(
+	connected_service = connman_manager_get_connected_service(
 	        manager->wifi_services);
 
 	if (NULL != connected_service || (connected_service != service))
@@ -765,25 +768,24 @@ static void service_property_changed_callback(gpointer data,
 
 				/* When the service object the state has changed for is not the one we're
 				 * currently connecting to then we do nothing here. */
-				if (!current_connect_req)
+				if (current_connect_req)
 				{
-					return;
-				}
 
-				current_service_data_t *service_data = current_connect_req->user_data;
+					current_service_data_t *service_data = current_connect_req->user_data;
 
-				if (service_data)
-				{
-					connman_service_t *curr_service = service_data->service;
-
-					// In case of hidden networks the original service never matches with the new service added
-					if (service != curr_service)
+					if (service_data)
 					{
-						service_data->service = service;
-					}
-				}
+						connman_service_t *curr_service = service_data->service;
 
-				handle_failed_connection_request(NULL);
+						// In case of hidden networks the original service never matches with the new service added
+						if (service != curr_service)
+						{
+							service_data->service = service;
+						}
+					}
+
+					handle_failed_connection_request(NULL);
+				}
 				return;
 
 			default:
@@ -2466,6 +2468,7 @@ static bool handle_findnetworks_command(LSHandle *sh, LSMessage *message,
 	gboolean result;
 	LSError lserror;
 	LSErrorInit(&lserror);
+	connman_technology_t *wifi_tech = NULL;
 
 	if (LSMessageIsSubscription(message))
 	{
@@ -2510,7 +2513,7 @@ static bool handle_findnetworks_command(LSHandle *sh, LSMessage *message,
 		}
 	}
 
-	connman_technology_t *wifi_tech = connman_manager_find_wifi_technology(manager);
+	wifi_tech = connman_manager_find_wifi_technology(manager);
 
 	if (NULL == wifi_tech)
 	{
@@ -2541,7 +2544,10 @@ static bool handle_findnetworks_command(LSHandle *sh, LSMessage *message,
 
 	populate_wifi_networks(&reply, FALSE);
 
-	LSMessageReply(sh, message, jvalue_tostring(reply, jschema_all()), &lserror);
+	if (!LSMessageReply(sh, message, jvalue_tostring(reply, jschema_all()), &lserror))
+	{
+		goto cleanup;
+	}
 
 cleanup:
 
@@ -2594,6 +2600,7 @@ static bool handle_get_networks_command(LSHandle *sh, LSMessage *message,
 	bool subscribed = false;
 	LSError lserror;
 	LSErrorInit(&lserror);
+	jschema_ref response_schema  = NULL;
 
 	replyObj = jobject_create();
 
@@ -2629,7 +2636,7 @@ static bool handle_get_networks_command(LSHandle *sh, LSMessage *message,
 
 	populate_wifi_networks(&replyObj, TRUE);
 
-	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
+	response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
 
 	if (!response_schema)
@@ -2866,8 +2873,11 @@ static bool handle_get_status_command(LSHandle *sh, LSMessage *message,
 
 	create_wifi_getstatus_response(&reply, subscribed);
 
-	LSMessageReply(sh, message, jvalue_tostring(reply, jschema_all()),
-	                    &lserror);
+	if (!LSMessageReply(sh, message, jvalue_tostring(reply, jschema_all()),
+	                    &lserror))
+	{
+		goto cleanup;
+	}
 
 cleanup:
 
@@ -3313,6 +3323,8 @@ static bool handle_create_wpspin_command(LSHandle *sh, LSMessage *message,
 	LSError lserror;
 	LSErrorInit(&lserror);
 
+	jschema_ref response_schema = NULL;
+
 	gint wpspin = generate_new_wpspin();
 
 	if (wpspin < 0)
@@ -3326,7 +3338,7 @@ static bool handle_create_wpspin_command(LSHandle *sh, LSMessage *message,
 	jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 	jobject_put(reply, J_CSTR_TO_JVAL("wpspin"), jstring_create(wpspin_str));
 
-	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
+	response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
 
 	if (!response_schema)

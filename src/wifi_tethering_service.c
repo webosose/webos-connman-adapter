@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 LG Electronics, Inc.
+// Copyright (c) 2014-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -874,6 +874,7 @@ static bool handle_get_station_count_command(LSHandle *sh, LSMessage *message, v
 	LSError lserror;
 	LSErrorInit(&lserror);
 	bool subscribed = false;
+	jschema_ref response_schema = NULL;
 
 	jvalue_ref parsedObj = {0};
 	if(!LSMessageValidateSchema(sh, message, j_cstr_to_buffer(SCHEMA_1(PROP(subscribe, boolean))), &parsedObj))
@@ -902,7 +903,7 @@ static bool handle_get_station_count_command(LSHandle *sh, LSMessage *message, v
 
 	send_sta_count(&reply);
 
-	jschema_ref response_schema = jschema_parse (j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+	response_schema = jschema_parse (j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
 	if(!response_schema)
 	{
 		LSMessageReplyErrorUnknown(sh,message);

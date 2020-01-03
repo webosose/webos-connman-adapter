@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -175,6 +175,11 @@ static gboolean populate_wifi_profile(jvalue_ref profileObj)
 		jstring_free_buffer(enc_profile_buf);
 		gchar *dec_profile = wifi_setting_decrypt(enc_profile, WIFI_LUNA_PREFS_ID);
 
+		gchar *ssid = NULL;
+		GStrv security = NULL;
+		bool hidden = false;
+		bool configured = false;
+		JSchemaInfo schemaInfo;
 		jvalue_ref parsedObj = {0};
 		jschema_ref input_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT,
 		                           NULL);
@@ -184,7 +189,6 @@ static gboolean populate_wifi_profile(jvalue_ref profileObj)
 			goto Exit;
 		}
 
-		JSchemaInfo schemaInfo;
 		jschema_info_init(&schemaInfo, input_schema, NULL, NULL);
 		parsedObj = jdom_parse(j_cstr_to_buffer(dec_profile), DOMOPT_NOOPT,
 		                       &schemaInfo);
@@ -194,9 +198,6 @@ static gboolean populate_wifi_profile(jvalue_ref profileObj)
 		{
 			goto Exit;
 		}
-
-		gchar *ssid = NULL;
-		GStrv security = NULL;
 
 		if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
 		{
@@ -209,9 +210,6 @@ static gboolean populate_wifi_profile(jvalue_ref profileObj)
 		{
 			WCALOG_DEBUG("ssid object not found");
 		}
-
-		bool hidden = false;
-		bool configured = false;
 
 		if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("security"), &securityListObj))
 		{
@@ -647,6 +645,8 @@ gboolean store_network_config(connection_settings_t *settings,
 	gchar *pathname = NULL, *config_group = NULL;
 	GKeyFile *keyfile = g_key_file_new();
 	gboolean ret = FALSE;
+	GStrv security_type = NULL;
+	wifi_profile_t *profile = NULL;
 
 	if (NULL == settings->ssid || NULL == security)
 	{
@@ -690,11 +690,11 @@ gboolean store_network_config(connection_settings_t *settings,
 		}
 	}
 
-	GStrv security_type = (GStrv) g_new0(GStrv, 2);
+	security_type = (GStrv) g_new0(GStrv, 2);
 	security_type[0] = g_strdup(security);
 	security_type[1] = NULL;
 
-	wifi_profile_t *profile = get_profile_by_ssid_security(settings->ssid,
+	profile = get_profile_by_ssid_security(settings->ssid,
 	                          security);
 
 	if (NULL != profile)
@@ -1228,7 +1228,7 @@ static gboolean inotify_data(GIOChannel *channel, GIOCondition cond,
 		next_event += len;
 		bytes_read -= len;
 
-		WCALOG_DEBUG("New event found for file %s, event mask : %lx", file,
+		WCALOG_DEBUG("New event found for file %s, event mask : %u", file,
 		             event->mask);
 
 		if (event->mask & IN_CREATE || event->mask & IN_MOVED_TO ||
