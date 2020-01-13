@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -952,6 +952,7 @@ connman_technology_t *connman_technology_new(const gchar* path)
 
 	connman_technology_t *technology = g_new0(connman_technology_t, 1);
 	GError *error = NULL;
+	GVariant* properties = NULL;
 
 	technology->path = g_strdup(path);
 
@@ -985,7 +986,7 @@ connman_technology_t *connman_technology_new(const gchar* path)
 	 * before we register the signals, we do not get the update.
 	 * So, we need to get all that information from connman again.
 	 */
-	GVariant* properties = connman_technology_get_properties(technology);
+	properties = connman_technology_get_properties(technology);
 
 	if (NULL == properties)
 	{

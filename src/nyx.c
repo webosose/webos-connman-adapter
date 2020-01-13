@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 LG Electronics, Inc.
+// Copyright (c) 2016-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ static bool retrieve_nyx_data(nyx_device_info_type_t type, char* buffer, size_t 
 {
 	nyx_error_t error;
 	const char* nyx_buffer = NULL;
+	gsize i;
 
 	error = nyx_device_info_query(device_main, type, &nyx_buffer);
 
@@ -70,7 +71,12 @@ static bool retrieve_nyx_data(nyx_device_info_type_t type, char* buffer, size_t 
 		return false;
 	}
 
-	g_strlcpy(buffer, nyx_buffer, buffer_size);
+	i = g_strlcpy(buffer, nyx_buffer, buffer_size);
+	if (i != strlen(nyx_buffer))
+	{
+		WCALOG_ERROR(MSGID_NYX_INIT_ERROR, 0, "Error in nyx_init");
+		return false;
+	}
 	return true;
 }
 
