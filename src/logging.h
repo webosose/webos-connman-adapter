@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -218,12 +218,6 @@ extern PmLogContext gLogContext;
 /** country_code.c */
 #define MSGID_COUNTRY_CODE_INFO                         "COUNTRY_CODE_INFO"
 #define MSGID_COUNTRY_CODE_FAILED                       "COUNTRY_CODE_FAILED"
-
-/** nyx.c */
-#define MSGID_NYX_INIT_ERROR                            "NYX_INIT_ERROR"
-#define MSGID_NYX_DEVICE_OPEN_ERROR                     "NYX_DEVICE_OPEN_ERROR"
-#define MSGID_NYX_DEVICE_CLOSE_ERROR                    "NYX_DEVICE_CLOSE_ERROR"
-#define MSGID_NYX_DEINIT_ERROR                          "NYX_DEINIT_ERROR"
 
 /** json_utils.c **/
 #define MSGID_JSON_KEY_NULL                             "JSON_KEY_NULL"

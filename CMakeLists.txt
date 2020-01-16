@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2019 LG Electronics, Inc.
+# Copyright (c) 2012-2020 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,10 +74,6 @@ pkg_check_modules(WCA_SUPPORT_API REQUIRED wca-support-api>=0.1.0)
 include_directories(${WCA_SUPPORT_API_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${WCA_SUPPORT_API_CFLAGS_OTHER})
 
-pkg_check_modules(NYXLIB REQUIRED nyx)
-include_directories(${NYXLIB_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${NYXLIB_CFLAGS_OTHER})
-
 webos_add_compiler_flags(ALL -Wall -g)
 
 webos_add_linker_options(ALL --no-undefined)
@@ -128,7 +124,6 @@ file(GLOB SOURCE_FILES
     src/json_utils.c
     src/lunaservice_utils.c
     src/main.c
-    src/nyx.c
     src/pacrunner_client.c
     src/utils.c
     src/wifi_tethering_service.c
@@ -150,7 +145,6 @@ target_link_libraries(webos-connman-adapter
                         ${LUNAPREFS_LDFLAGS}
                         ${PMLOG_LDFLAGS}
                         ${WCA_SUPPORT_LDFLAGS}
-                        ${NYXLIB_LDFLAGS}
                         rt
                         pthread)
 
