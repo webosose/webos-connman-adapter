@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,14 +30,12 @@
 #include <stdlib.h>
 #include <luna-service2/lunaservice.h>
 #include <wca-support.h>
-#include <nyx/common/nyx_core.h>
 
 #include "connman_manager.h"
 #include "logging.h"
 #include "wifi_service.h"
 #include "wifi_setting.h"
 #include "connectionmanager_service.h"
-#include "nyx.h"
 
 static GMainLoop *mainloop = NULL;
 
@@ -68,13 +66,6 @@ main(int argc, char **argv)
 	(void) PmLogGetContext(kLogContextName, &gLogContext);
 
 	WCALOG_DEBUG("Starting webos-connman-adapter");
-
-	if (!init_nyx())
-	{
-		WCALOG_ERROR(MSGID_WIFI_SRVC_REGISTER_FAIL, 0,
-		             "Error in initializing nyx");
-		return -1;
-	}
 
 	if (initialize_wifi_ls2_calls(mainloop, &wifi_handle) < 0)
 	{
@@ -109,8 +100,6 @@ main(int argc, char **argv)
 	remove_config_inotify_watch();
 
 	g_main_loop_unref(mainloop);
-
-	release_nyx();
 
 	return 0;
 }

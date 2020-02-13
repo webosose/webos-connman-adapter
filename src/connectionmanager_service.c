@@ -42,6 +42,10 @@ errorText | Yes | String | Error description
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <linux/if.h>
+
 #include <pbnjson.h>
 
 #include "common.h"
@@ -54,13 +58,15 @@ errorText | Yes | String | Error description
 #include "errors.h"
 #include "wifi_profile.h"
 #include "utils.h"
-#include "nyx.h"
 #include "pacrunner_client.h"
 #include "wifi_setting.h"
 
 #define COUNTER_ACCURACY    10
 #define COUNTER_PERIOD      1
 #define GETINFO_UPDATE_INTERVAL_SECONDS 1
+
+#define MAC_ADDR_LEN    6
+#define MAC_ADDR_STRING_LEN 32
 
 static LSHandle *pLsHandle;
 
@@ -1590,6 +1596,52 @@ cleanup:
 
 }
 
+/**
+ * @brief Determine the mac address of the supplied network interface. mac_address must
+ * point to a valid buffer of a length of at least 18 bytes (set real length with
+ * mac_address_len). The format of the mac address string is "HH:HH:HH:HH:HH::HH\0" where
+ * "H" represents a hex digit.
+ *
+ * @param interface Interface name (e.g. "eth0" or "wlan0") of which the mac address
+ * should be determined.
+ * @param mac_address Result buffer in which the mac address is written.
+ * @param mac_address_len Length of the supplied result buffer
+ * @result 0 when the operation was successfull. -1 otherwise.
+ */
+
+int retrieve_mac_address(const char *interface, char *mac_address,
+                         unsigned int mac_address_len)
+{
+	struct ifreq ifr;
+	int s;
+	int ret = -1;
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (s == -1)
+	{
+		return ret;
+	}
+
+	g_strlcpy(ifr.ifr_name, interface, IFNAMSIZ);
+
+	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0)
+	{
+		int i;
+
+		for (i = 0; i < MAC_ADDR_LEN; i++)
+			g_snprintf(&mac_address[i * 3], mac_address_len, "%02X%s",
+							(unsigned char) ifr.ifr_hwaddr.sa_data[i],
+							(i < (MAC_ADDR_LEN - 1)) ? ":" : "");
+
+		ret = 0;
+	}
+
+	close(s);
+
+	return ret;
+}
+
 static void getinfo_add_response(jvalue_ref* reply, bool subscribed)
 {
 	jobject_put(*reply, J_CSTR_TO_JVAL("subscribed"), jboolean_create(subscribed));
@@ -1646,7 +1698,7 @@ static void getinfo_update(void)
 	char wired_mac_address[MAC_ADDR_STRING_LEN]={0};
 	gsize i;
 
-	if (retrieve_wifi_mac_address(wifi_mac_address, MAC_ADDR_STRING_LEN))
+	if (retrieve_mac_address(CONNMAN_WIFI_INTERFACE_NAME, wifi_mac_address, MAC_ADDR_STRING_LEN) == 0)
 	{
 		if (g_strcmp0(getinfo_cur_wifi_mac_address, wifi_mac_address))
 		{
@@ -1668,7 +1720,7 @@ static void getinfo_update(void)
 		WCALOG_ERROR(MSGID_WIFI_MAC_ADDR_ERROR,0,"Error in fetching mac address for wifi interface");
 	}
 
-	if (retrieve_wired_mac_address(wired_mac_address, MAC_ADDR_STRING_LEN))
+	if (retrieve_mac_address(CONNMAN_WIRED_INTERFACE_NAME, wired_mac_address, MAC_ADDR_STRING_LEN) == 0)
 	{
 		if (g_strcmp0(getinfo_cur_wired_mac_address, wired_mac_address))
 		{
