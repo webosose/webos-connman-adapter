@@ -52,6 +52,37 @@ static guint wifi_tethering_client_count = 0;
 
 void start_tethering_timeout(void);
 
+static int get_max_station_count(void)
+{
+	int ret = -1;
+	FILE *fp = NULL;
+	char buff[1024];
+	size_t readSize = 0;
+	char *max_num_sta = NULL;
+
+	fp = popen("wpa_cli -i wlan0 get max_num_sta", "r");
+	if (NULL == fp)
+	{
+	   return ret;
+	}
+
+	readSize = fread((void*)buff, sizeof(char), 1024 - 1, fp);
+	if (0 == readSize)
+	{
+	   return ret;
+	}
+	buff[readSize]='0';
+
+	max_num_sta = g_strndup(buff, readSize);
+	ret = atoi(max_num_sta);
+
+	pclose(fp);
+	g_free(max_num_sta);
+
+	return ret;
+}
+
+
 static void support_tethering_disabled_cb(bool success, void *user_data)
 {
 	LSMessage *message = user_data;
@@ -929,6 +960,97 @@ cleanup:
 	return true;
 }
 
+/////////////////////////////////////////////////////////////////
+//                                                             //
+//            Start of API documentation comment block         //
+//                                                             //
+/////////////////////////////////////////////////////////////////
+/**
+@page com_webos_wifi com.webos.wifi/tethering/getMaxStationCount
+@{
+@page com_webos_service_wifi com.webos.service.wifi/tethering/getMaxStationCount
+@{
+@section com_webos_service_wifi_tethering_getMaxStationCount getMaxStationCount
+
+Get the maximum number of stations allowed to connect to the AP.
+
+@par Parameters
+
+@par Returns(Call) for all forms
+
+Name | Required | Type | Description
+-----|--------|------|----------
+maxStationCount | Yes | Number | Number of stations allowed to connect to the AP.
+returnValue | Yes | Boolean | True, if call was successful. False otherwise.
+errorText | No | String | Error text when call was not successful.
+errorCode | No | Integer | Error code when call was not successful.
+
+@par Returns(Subscription)
+Not applicable.
+
+@}
+*/
+/////////////////////////////////////////////////////////////////
+//                                                             //
+//            End of API documentation comment block           //
+//                                                             //
+/////////////////////////////////////////////////////////////////
+
+static bool handle_get_max_station_count_command(LSHandle *sh, LSMessage *message,
+                                     void *context)
+{
+	if (!connman_status_check(manager, sh, message))
+	{
+		return true;
+	}
+
+	if (!wifi_technology_status_check(sh, message))
+	{
+		return true;
+	}
+
+	jvalue_ref reply = jobject_create();
+	LSError lserror;
+	LSErrorInit(&lserror);
+
+	int max_sta_count = get_max_station_count();
+	if (max_sta_count < 0)
+	{
+		LSMessageReplyErrorUnknown(sh, message);
+		goto cleanup;
+	}
+
+	jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
+	jobject_put(reply, J_CSTR_TO_JVAL("getMaxStationCount"), jnumber_create_i32(max_sta_count));
+	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+
+	if (!response_schema)
+	{
+		LSMessageReplyErrorUnknown(sh, message);
+		goto cleanup;
+	}
+
+	if (!LSMessageReply(sh, message, jvalue_tostring(reply, response_schema),
+	                    &lserror))
+	{
+		LSErrorPrint(&lserror, stderr);
+		LSErrorFree(&lserror);
+	}
+
+	jschema_release(&response_schema);
+
+cleanup:
+
+	if (LSErrorIsSet(&lserror))
+	{
+		LSErrorPrint(&lserror, stderr);
+		LSErrorFree(&lserror);
+	}
+
+	j_release(&reply);
+	return true;
+}
+
 /**
  * com.webos.service.wifi/tethering service Luna Method Table
  */
@@ -938,6 +1060,7 @@ static LSMethod wifi_tethering_methods[] =
 	{ LUNA_METHOD_TETHERING_SETSTATE,              handle_set_state_command },
 	{ LUNA_METHOD_TETHERING_GETSTATE,              handle_get_state_command },
 	{ LUNA_METHOD_TETHERING_GETSTACOUNT,           handle_get_station_count_command },
+	{ LUNA_METHOD_TETHERING_GETMAXSTACOUNT,        handle_get_max_station_count_command },
 	{},
 };
 
