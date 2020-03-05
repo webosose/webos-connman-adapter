@@ -156,6 +156,15 @@ gboolean wifi_scan_now(void)
 		regular_scan_pending = true;
 		result = true;
 	}
+	else if (is_wifi_tethering())
+	{
+		WCALOG_DEBUG("wifi_scan: Scanning wifi in tethering status");
+		system("iw dev wlan0 scan");
+		scan_running = false;
+		regular_scan_pending = false;
+		scan_time = g_get_monotonic_time() / 1000;
+		result = true;
+	}
 	else if (!wifi_tech)
 	{
 		return false;
