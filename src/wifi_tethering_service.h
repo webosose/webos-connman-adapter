@@ -35,6 +35,7 @@
 #define LUNA_METHOD_TETHERING_GETSTATE          "getState"
 #define LUNA_METHOD_TETHERING_GETSTACOUNT       "getStationCount"
 #define LUNA_METHOD_TETHERING_GETMAXSTACOUNT    "getMaxStationCount"
+#define LUNA_METHOD_TETHERING_SETMAXSTACOUNT    "setMaxStationCount"
 
 extern void send_tethering_state_to_subscribers(void);
 extern void send_sta_count_to_subscribers(void);

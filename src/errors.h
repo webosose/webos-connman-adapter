@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -111,5 +111,8 @@
 #define WCA_API_ERROR_TETHERING_NOT_ALLOWED_TO_CHANGE_CHANNEL 208
 #define WCA_API_ERROR_WIFI_SET_COUNTRY_CODE_FAILED 209
 #define WCA_API_ERROR_TETHERING_IP_ADDRESS_FAILED         148
+#define WCA_API_ERROR_TETHERING_NOT_ALLOWED_TO_CHANGE_MAX_STATION_COUNT 210
+#define WCA_API_ERROR_TETHERING_SET_MAX_STATION_COUNT_FAILED 211
+
 
 #endif /* ERRORS_H_ */

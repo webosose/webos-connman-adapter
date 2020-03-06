@@ -29,8 +29,9 @@
         "com.webos.service.wifi/startwps",
         "com.webos.service.wifi/tethering/getMaxStationCount",
         "com.webos.service.wifi/tethering/getState",
-        "com.webos.service.wifi/tethering/setState",
-        "com.webos.service.wifi/tethering/getStationCount"
+        "com.webos.service.wifi/tethering/getStationCount",
+        "com.webos.service.wifi/tethering/setMaxStationCount",
+        "com.webos.service.wifi/tethering/setState"
     ],
     "networking": [
         "com.webos.service.connectionmanager/checkinternetstatus",
