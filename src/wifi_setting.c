@@ -890,11 +890,11 @@ gboolean change_network_dns(const char *ssid, const char *security,
 
 	for (i = 0; i < num_elems; i++)
 	{
-		dnsstr = strcat(dnsstr, dns[i]);
+		dnsstr = strncat(dnsstr, dns[i], strlen(dns[i]));
 
 		if (i < (num_elems - 1))
 		{
-			dnsstr = strcat(dnsstr, ",");
+			dnsstr = strncat(dnsstr, ",", strlen(","));
 		}
 	}
 
