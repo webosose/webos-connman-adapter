@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 LG Electronics, Inc.
+// Copyright (c) 2015-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -154,6 +154,15 @@ gboolean wifi_scan_now(void)
 	else if (scan_running && scan_is_p2p)
 	{
 		regular_scan_pending = true;
+		result = true;
+	}
+	else if (is_wifi_tethering())
+	{
+		WCALOG_DEBUG("wifi_scan: Scanning wifi in tethering status");
+		system("iw dev wlan0 scan");
+		scan_running = false;
+		regular_scan_pending = false;
+		scan_time = g_get_monotonic_time() / 1000;
 		result = true;
 	}
 	else if (!wifi_tech)
