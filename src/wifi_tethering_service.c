@@ -856,6 +856,7 @@ static bool handle_get_state_command(LSHandle *sh, LSMessage *message,
 	LSError lserror;
 	LSErrorInit(&lserror);
 	bool subscribed = false;
+	jschema_ref response_schema  = NULL;
 
 	if (LSMessageIsSubscription(message))
 	{
@@ -881,7 +882,7 @@ static bool handle_get_state_command(LSHandle *sh, LSMessage *message,
 
 	send_tethering_state(&reply);
 
-	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
+	response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
 
 	if (!response_schema)
