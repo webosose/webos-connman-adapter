@@ -1615,7 +1615,7 @@ int retrieve_mac_address(const char *interface, char *mac_address,
 	struct ifreq ifr;
 	int s;
 	int ret = -1;
-	gsize = i;
+	gsize i;
 
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 
