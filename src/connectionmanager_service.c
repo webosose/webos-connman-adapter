@@ -1615,6 +1615,7 @@ int retrieve_mac_address(const char *interface, char *mac_address,
 	struct ifreq ifr;
 	int s;
 	int ret = -1;
+	gsize = i;
 
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -1623,7 +1624,11 @@ int retrieve_mac_address(const char *interface, char *mac_address,
 		return ret;
 	}
 
-	g_strlcpy(ifr.ifr_name, interface, IFNAMSIZ);
+	i = g_strlcpy(ifr.ifr_name, interface, IFNAMSIZ);
+	if (i != strlen(interface))
+	{
+		WCALOG_ERROR(MSGID_WIRED_MAC_ADDR_ERROR,0,"Failed to copy interface name for wired interface");
+	}
 
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0)
 	{
@@ -2402,6 +2407,8 @@ cleanup:
 static bool handle_set_proxy_command(LSHandle *sh,
         LSMessage *message, void *context)
 {
+	connman_service_t *service = NULL;
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
@@ -2477,7 +2484,7 @@ static bool handle_set_proxy_command(LSHandle *sh,
 			goto invalid_params;
 	}
 
-	connman_service_t *service = retrieve_service_by_ssid(ssid);
+	service = retrieve_service_by_ssid(ssid);
 
 	if (NULL != service)
 	{

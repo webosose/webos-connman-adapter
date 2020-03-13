@@ -3189,6 +3189,8 @@ Not applicable.
 static bool handle_delete_profile_command(LSHandle *sh, LSMessage *message,
         void *context)
 {
+	wifi_profile_t *profile = NULL;
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
@@ -3219,12 +3221,11 @@ static bool handle_delete_profile_command(LSHandle *sh, LSMessage *message,
 	}
 	else
 	{
-
 		LSMessageReplyErrorInvalidParams(sh, message);
 		goto cleanup;
 	}
 
-	wifi_profile_t *profile = get_profile_by_id(profile_id);
+	profile = get_profile_by_id(profile_id);
 
 	if (NULL == profile)
 	{

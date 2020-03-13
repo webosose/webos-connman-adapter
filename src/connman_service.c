@@ -1394,7 +1394,11 @@ void connman_service_update_properties(connman_service_t *service,
 			service->ssid_len = g_variant_get_size(val);
 			g_free(service->ssid);
 			service->ssid = g_new(gchar, service->ssid_len + 1);
-			g_strlcpy(service->ssid, data, service->ssid_len + 1);
+			i = g_strlcpy(service->ssid, data, service->ssid_len + 1);
+			if (i != strlen(data))
+			{
+				WCALOG_ERROR(MSGID_MANAGER_FIELDS_ERROR, 0, "Failed to copy ssid info.");
+			}
 
 			connman_service_update_display_name(service);
 		}
