@@ -849,7 +849,8 @@ static void service_property_changed_callback(gpointer data,
 
 #endif
 		/* Unset agent callback as we no longer have any valid input for connman available */
-		connman_agent_set_request_input_callback(agent, NULL, NULL);
+		// PLAT-102750 [Auto]: Second time wifi is not connecting.
+		//connman_agent_set_request_input_callback(agent, NULL, NULL);
 	}
 	else if (!g_strcmp0(property, "Online"))
 	{
