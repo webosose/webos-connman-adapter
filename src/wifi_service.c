@@ -96,6 +96,26 @@ typedef struct profile_info
 } profile_info_t;
 
 static gboolean check_wifi_services_for_updates(void);
+static void remove_service_or_all_other(const gchar *ssid, gboolean others);
+
+static void remove_connected_service()
+{
+	WCALOG_DEBUG("Remove connected_service");
+
+	wifi_profile_t *current_connected_profile = NULL;
+	connman_service_t *connected_service = NULL;
+	connected_service = connman_manager_get_connected_service(manager->wifi_services);
+
+	if (!connected_service)
+		return;
+
+	current_connected_profile = get_profile_by_ssid_security(connected_service->name, connected_service->security[0]);
+
+	if (!current_connected_profile)
+		return;
+
+	connman_service_disconnect(connected_service);
+}
 
 connection_settings_t *connection_settings_new(void)
 {
@@ -2333,6 +2353,8 @@ static bool handle_connect_command(LSHandle *sh, LSMessage *message,
 	}
 
 	service_req = luna_service_request_new(sh, message);
+
+	remove_connected_service();
 
 	connect_wifi_with_ssid(ssid, profile, parsedObj, service_req);
 
