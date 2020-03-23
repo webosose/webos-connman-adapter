@@ -1202,32 +1202,36 @@ GVariant *agent_request_input_callback(GVariant *fields, gpointer data)
 
 	while (g_variant_iter_next(&iter, "{sv}", &key, &value))
 	{
-		if (!strncmp(key, "Name", 10))
+		size_t len = strlen(key) - 1;
+		if (len > 0)
 		{
-			if (NULL != settings->ssid)
+			if (strncmp(key, "Name", len) == 0)
 			{
-				g_variant_builder_add(vabuilder, "{sv}", "Name",
-				                      g_variant_new("s", settings->ssid));
-			}
-		}
-		else if (!strncmp(key, "Passphrase", 10))
-		{
-			/* FIXME we're ignoring the other fields here as we're only connecting to
-			 * psk secured networks at the moment */
-			if (NULL != settings->passkey)
-			{
-				g_variant_builder_add(vabuilder, "{sv}", "Passphrase",
-				                      g_variant_new("s", settings->passkey));
-			}
-		}
-		else if (!strncmp(key, "WPS", 10))
-		{
-			if (settings->wpsmode)
-			{
-				if (settings->wpspin != NULL)
+				if (NULL != settings->ssid)
 				{
-					g_variant_builder_add(vabuilder, "{sv}", "WPS",
-					                      g_variant_new("s", settings->wpspin));
+					g_variant_builder_add(vabuilder, "{sv}", "Name",
+				                          g_variant_new("s", settings->ssid));
+				}
+			}
+			else if (strncmp(key, "Passphrase", len) == 0)
+			{
+				/* FIXME we're ignoring the other fields here as we're only connecting to
+				* psk secured networks at the moment */
+				if (NULL != settings->passkey)
+				{
+					g_variant_builder_add(vabuilder, "{sv}", "Passphrase",
+				                          g_variant_new("s", settings->passkey));
+				}
+			}
+			else if (strncmp(key, "WPS", len) == 0)
+			{
+				if (settings->wpsmode)
+				{
+					if (settings->wpspin != NULL)
+					{
+						g_variant_builder_add(vabuilder, "{sv}", "WPS",
+				                              g_variant_new("s", settings->wpspin));
+					}
 				}
 			}
 		}

@@ -60,6 +60,7 @@ errorText | Yes | String | Error description
 #include "utils.h"
 #include "pacrunner_client.h"
 #include "wifi_setting.h"
+#include "wifi_tethering_service.h"
 
 #define COUNTER_ACCURACY    10
 #define COUNTER_PERIOD      1
@@ -81,7 +82,7 @@ gboolean wired_connected = FALSE;
 gboolean wifi_connected = FALSE;
 gboolean p2p_connected = FALSE;
 guint block_getstatus_response = 0;
-gboolean old_wifi_tethering = FALSE;
+gboolean wifi_tethering = FALSE;
 gboolean wired_plugged = FALSE;
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
@@ -560,9 +561,11 @@ static gboolean check_update_is_needed(void)
 		return FALSE;
 	}
 
-	if (old_wifi_tethering != is_wifi_tethering())
+	gboolean old_wifi_tethering = wifi_tethering;
+
+	wifi_tethering = is_wifi_tethering();
+	if (old_wifi_tethering != wifi_tethering)
 	{
-		old_wifi_tethering = is_wifi_tethering();
 		needed = TRUE;
 	}
 
@@ -638,7 +641,7 @@ void connectionmanager_send_status_to_subscribers(void)
 	if (manager == NULL)
 		return;
 
-	if (block_getstatus_response || !check_update_is_needed())
+	if (block_getstatus_response > 0 || !check_update_is_needed())
 	{
 		// Retrieve the connected service for wired to check the online checking status
 		connman_service_t *connected_wired_service =
@@ -1075,7 +1078,6 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 		if (ssid)
 		{
 			wifi_profile_t *profile = get_profile_by_ssid(ssid);
-
 			if (profile && profile->configured)
 			{
 				if (!g_strcmp0(ipv4.method, "manual"))
@@ -1377,7 +1379,6 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 		if (ssid)
 		{
 			wifi_profile_t *profile = get_profile_by_ssid(ssid);
-
 			if (profile && profile->configured)
 			{
 				if (change_network_dns(profile->ssid, profile->security[0], dns))
@@ -1508,7 +1509,7 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 		{
 			if (enable_offline && is_wifi_tethering())
 			{
-				set_wifi_tethering(!enable_offline);
+				set_wifi_tethering(!enable_offline, 0);
 			}
 
 			connman_manager_set_offlinemode(manager, enable_offline);

@@ -1174,7 +1174,7 @@ static gboolean inotify_data(GIOChannel *channel, GIOCondition cond,
 {
 	char buffer[256];
 	char *next_event;
-	gsize bytes_read;
+	gsize bytes_read = 0;
 	GIOStatus status;
 
 	if (cond & (G_IO_NVAL | G_IO_ERR | G_IO_HUP))
