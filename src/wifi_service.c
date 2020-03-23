@@ -557,6 +557,7 @@ static gboolean handle_failed_connection_request(gpointer user_data)
 {
 	const char *error_message = "Unknown error";
 	unsigned int error_code = WCA_API_ERROR_UNKNOWN;
+	GVariant *properties = NULL;
 
 	if (NULL == manager)
 	{
@@ -604,7 +605,7 @@ static gboolean handle_failed_connection_request(gpointer user_data)
 		goto cleanup;
 	}
 
-	GVariant *properties = connman_service_fetch_properties(service);
+	properties = connman_service_fetch_properties(service);
 
 	if (NULL == properties)
 	{

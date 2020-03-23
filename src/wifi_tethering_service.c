@@ -69,7 +69,8 @@ static int get_max_station_count(void)
 	readSize = fread((void*)buff, sizeof(char), 1024 - 1, fp);
 	if (0 == readSize)
 	{
-	   return ret;
+		pclose(fp);
+		return ret;
 	}
 	buff[readSize]='0';
 
@@ -1024,6 +1025,7 @@ static bool handle_get_max_station_count_command(LSHandle *sh, LSMessage *messag
 	}
 
 	jvalue_ref reply = jobject_create();
+	jschema_ref response_schema = NULL;
 	LSError lserror;
 	LSErrorInit(&lserror);
 
@@ -1036,7 +1038,7 @@ static bool handle_get_max_station_count_command(LSHandle *sh, LSMessage *messag
 
 	jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 	jobject_put(reply, J_CSTR_TO_JVAL("getMaxStationCount"), jnumber_create_i32(max_sta_count));
-	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+	response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
 
 	if (!response_schema)
 	{
