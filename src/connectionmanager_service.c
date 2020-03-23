@@ -989,6 +989,8 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
+	connman_service_t *service = NULL;
+
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
 	if (!LSMessageValidateSchema(sh, message,
@@ -1055,7 +1057,7 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 		jstring_free_buffer(ssid_buf);
 	}
 
-	connman_service_t *service = retrieve_service_by_ssid(ssid);
+	service = retrieve_service_by_ssid(ssid);
 
 	if (NULL != service)
 	{
