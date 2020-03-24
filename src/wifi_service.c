@@ -558,6 +558,8 @@ static gboolean handle_failed_connection_request(gpointer user_data)
 	const char *error_message = "Unknown error";
 	unsigned int error_code = WCA_API_ERROR_UNKNOWN;
 	GVariant *properties = NULL;
+	connman_service_t *service = NULL;
+	connection_settings_t *settings = NULL;
 
 	if (NULL == manager)
 	{
@@ -576,8 +578,8 @@ static gboolean handle_failed_connection_request(gpointer user_data)
 		goto cleanup;
 	}
 
-	connman_service_t *service = service_data->service;
-	connection_settings_t *settings = service_data->settings;
+	service = service_data->service;
+	settings = service_data->settings;
 
 	if (NULL == service || NULL == g_slist_find(manager->wifi_services, service))
 	{
@@ -751,6 +753,7 @@ static void service_property_changed_callback(gpointer data,
 	if (!g_strcmp0(property, "State"))
 	{
 		connman_service_t *service = (connman_service_t *)data;
+		wifi_profile_t *profile = NULL;
 
 		if (NULL == service)
 		{
@@ -818,8 +821,6 @@ static void service_property_changed_callback(gpointer data,
 			// Hidden network.
 			return;
 		}
-
-		wifi_profile_t *profile = NULL;
 
 		if (service->security != NULL)
 		{
