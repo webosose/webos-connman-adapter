@@ -37,6 +37,7 @@
 #define LUNA_METHOD_TETHERING_GETMAXSTACOUNT    "getMaxStationCount"
 #define LUNA_METHOD_TETHERING_SETMAXSTACOUNT    "setMaxStationCount"
 
+extern gboolean set_wifi_tethering(bool state, LSMessage *message);
 extern void send_tethering_state_to_subscribers(void);
 extern void send_sta_count_to_subscribers(void);
 extern int initialize_wifi_tethering_ls2_calls(GMainLoop *mainloop,

@@ -235,7 +235,7 @@ gboolean set_wifi_tethering(bool state, LSMessage *message)
 
 	if (!is_wifi_powered() && state)
 	{
-		previous_wifi_legacy_powered = FALSE;
+		previous_wifi_legacy_powered = is_wifi_powered();
 
 		// we need to have WiFI powered otherwise we can't start tethering
 		connman_technology_set_powered(wifi_tech, TRUE, NULL);
@@ -246,7 +246,7 @@ gboolean set_wifi_tethering(bool state, LSMessage *message)
 	}
 	else if (is_wifi_powered() && state)
 	{
-		previous_wifi_legacy_powered = TRUE;
+		previous_wifi_legacy_powered = is_wifi_powered();
 	}
 
 	if (state)

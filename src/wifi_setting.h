@@ -47,6 +47,7 @@ extern gboolean change_network_ipv4(const char *ssid, const char *security,
                                     const char *address, const char *netmask, const char *gateway);
 extern gboolean change_network_ipv6(const char *ssid, const char *security,
                                     const char *address, const char *prefixLen, const char *gateway);
+extern gboolean change_network_dns(const char *ssid, const char *security, const GStrv *dns);
 extern gboolean change_network_remove_entry(const char *ssid, const char *security, const char *key);
 extern void remove_config_inotify_watch(void);
 
