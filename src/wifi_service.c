@@ -3030,6 +3030,7 @@ static bool handle_get_profilelist_command(LSHandle *sh, LSMessage *message,
 	jvalue_ref reply = jobject_create();
 	LSError lserror;
 	LSErrorInit(&lserror);
+	jschema_ref response_schema  = NULL;
 
 	if (profile_list_is_empty())
 	{
@@ -3041,8 +3042,8 @@ static bool handle_get_profilelist_command(LSHandle *sh, LSMessage *message,
 	jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 	add_wifi_profile_list(&reply);
 
-	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
-	                              DOMOPT_NOOPT, NULL);
+	response_schema = jschema_parse(j_cstr_to_buffer("{}"),
+	                                  DOMOPT_NOOPT, NULL);
 
 	if (!response_schema)
 	{
@@ -3107,6 +3108,9 @@ Not applicable.
 static bool handle_get_profile_command(LSHandle *sh, LSMessage *message,
                                        void *context)
 {
+	jschema_ref response_schema  = NULL;
+	wifi_profile_t *profile = NULL;
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
@@ -3142,7 +3146,7 @@ static bool handle_get_profile_command(LSHandle *sh, LSMessage *message,
 		goto cleanup;
 	}
 
-	wifi_profile_t *profile = get_profile_by_id(profile_id);
+	profile = get_profile_by_id(profile_id);
 
 	if (NULL == profile)
 	{
@@ -3156,7 +3160,7 @@ static bool handle_get_profile_command(LSHandle *sh, LSMessage *message,
 		add_wifi_profile(&reply, profile);
 	}
 
-	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
+	response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
 
 	if (!response_schema)
