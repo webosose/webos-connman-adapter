@@ -78,3 +78,9 @@ void wifi_scan_start(connman_technology_t* _wifi_tech);
  */
 extern void wifi_scan_stop(void);
 
+/**
+ * Starts a fresh scan with options, or does nothing if scan already running.
+ * Returns success/error.
+ */
+extern gboolean wifi_scan_now_with_option(const GStrv *ssid, const GStrv *freq);
+

@@ -420,3 +420,64 @@ void wifi_scan_start(connman_technology_t* _wifi_tech)
 		scan_timeout_cb(NULL);
 	}
 }
+
+gboolean wifi_scan_now_with_option(const GStrv *ssid, const GStrv *freq)
+{
+	if (!wifi_tech)
+	{
+		return false;
+	}
+
+	gsize i;
+	gsize ssid_num = g_strv_length(ssid);
+	gsize freq_num = g_strv_length(freq);
+
+	gchar *ssidstr = g_strnfill(32 * (ssid_num + 1), 0);
+	gchar *freqstr = g_strnfill(5 * (ssid_num + 1), 0);
+
+	gchar *basestr = "iw dev wlan0 scan";
+	gchar *command = NULL;
+
+	for (i = 0; i < ssid_num; i++)
+	{
+		ssidstr = strncat(ssidstr, ssid[i], strlen(ssid[i]));
+
+		if (i < (ssid_num - 1))
+		{
+			ssidstr = strncat(ssidstr, " ", strlen(" "));
+		}
+	}
+
+	for (i = 0; i < freq_num; i++)
+	{
+		char *frequency = NULL;
+		frequency = g_strdup_printf("%d", freq[i]);
+
+		freqstr = strncat(freqstr, frequency, strlen(frequency));
+
+		if (i < (freq_num - 1))
+		{
+			freqstr = strncat(freqstr, " ", strlen(" "));
+		}
+
+		g_free(frequency);
+	}
+
+	if (ssid_num > 0 && freq_num > 0)
+	{
+		command = g_strdup_printf("%s -u ssid %s freq %s", basestr, ssidstr, freqstr);
+	}
+	else if (ssid_num > 0 && freq_num <= 0)
+	{
+		command = g_strdup_printf("%s ssid %s", basestr, ssidstr);
+	}
+	else if (ssid_num <= 0 && freq_num > 0)
+	{
+		command = g_strdup_printf("%s freq %s", basestr, freqstr);
+	}
+
+	WCALOG_DEBUG("wifi_scan: Scanning wifi with %s", command);
+	(void)system(command);
+
+	return true;
+}

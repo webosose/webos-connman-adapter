@@ -2594,6 +2594,51 @@ cleanup:
 static bool handle_scan_command(LSHandle *sh, LSMessage *message,
                                 void *user_data)
 {
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message, j_cstr_to_buffer(STRICT_SCHEMA(PROPS_2(ARRAY(ssid, string),
+									ARRAY(frequency, number)))), &parsedObj))
+	{
+		return true;
+	}
+
+	GStrv ssid = NULL;
+	GStrv frequency = NULL;
+	jvalue_ref ssidObj = {0};
+	jvalue_ref frequencyObj = {0};
+	bool is_scan_option = false;
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
+	{
+		int i, ssid_arrsize = jarray_size(ssidObj);
+		ssid = (GStrv) g_new0(GStrv, ssid_arrsize + 1);
+
+		for (i = 0; i < ssid_arrsize; i++)
+		{
+			raw_buffer ssid_buf = jstring_get(jarray_get(ssidObj, i));
+			ssid[i] = g_strdup(ssid_buf.m_str);
+			jstring_free_buffer(ssid_buf);
+		}
+
+		ssid[ssid_arrsize] = NULL;
+		is_scan_option = true;
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("frequency"), &frequencyObj))
+	{
+		int i, frequency_arrsize = jarray_size(frequencyObj);
+		frequency = (GStrv) g_new0(GStrv, frequency_arrsize + 1);
+
+		for (i = 0; i < frequency_arrsize; i++)
+		{
+			int freq = 0;
+			jnumber_get_i32(jarray_get(frequencyObj, i), &freq);
+			frequency[i] = freq;
+		}
+
+		frequency[frequency_arrsize] = NULL;
+		is_scan_option = true;
+	}
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
@@ -2611,14 +2656,29 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	if (!wifi_scan_now())
+	if (is_scan_option)
 	{
-		LSMessageReplyCustomError(sh, message, "Error in scanning network",
-		                          WCA_API_ERROR_SCANNING);
-		return true;
+		if (!wifi_scan_now_with_option(ssid, frequency))
+		{
+			LSMessageReplyCustomError(sh, message, "Error in scanning network",
+												  WCA_API_ERROR_SCANNING);
+			return true;
+		}
+	}
+	else
+	{
+		if (!wifi_scan_now())
+		{
+			LSMessageReplyCustomError(sh, message, "Error in scanning network",
+									  WCA_API_ERROR_SCANNING);
+			return true;
+		}
 	}
 
 	LSMessageReplySuccess(sh, message);
+
+	j_release(&parsedObj);
+	g_strfreev(ssid);
 	return true;
 }
 
