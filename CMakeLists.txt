@@ -108,6 +108,10 @@ if (ENABLE_QUICK_WOL)
 webos_add_compiler_flags(ALL -DENABLE_QUICK_WOL)
 endif()
 
+if (ENABLE_SCAN_ON_SOFTAP)
+webos_add_compiler_flags(ALL -DENABLE_SCAN_ON_SOFTAP)
+endif()
+
 include_directories(src ${GDBUS_IF_DIR})
 webos_configure_header_files(src)
 
