@@ -156,6 +156,7 @@ gboolean wifi_scan_now(void)
 		regular_scan_pending = true;
 		result = true;
 	}
+#ifdef ENABLE_SCAN_ON_SOFTAP
 	else if (is_wifi_tethering())
 	{
 		WCALOG_DEBUG("wifi_scan: Scanning wifi in tethering status");
@@ -165,6 +166,7 @@ gboolean wifi_scan_now(void)
 		scan_time = g_get_monotonic_time() / 1000;
 		result = true;
 	}
+#endif
 	else if (!wifi_tech)
 	{
 		return false;
