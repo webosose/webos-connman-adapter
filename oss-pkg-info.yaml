@@ -1,0 +1,4 @@
+Open Source Software Package:
+- name: webOSOSE-webos-connman-adapter
+  source: git://github.com/webosose/webos-connman-adapter
+  license: Apache-2.0
