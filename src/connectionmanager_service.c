@@ -486,18 +486,6 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 		connected_p2p_service = connman_manager_get_connected_service(
 		                            manager->p2p_services);
 	}
-
-	if (NULL != connected_p2p_service)
-	{
-		append_p2p_connection_status(&connected_p2p_status, connected_p2p_service);
-		jobject_put(*reply, J_CSTR_TO_JVAL("wifiDirect"), connected_p2p_status);
-		j_release(&disconnected_p2p_status);
-	}
-	else
-	{
-		jobject_put(*reply, J_CSTR_TO_JVAL("wifiDirect"), disconnected_p2p_status);
-		j_release(&connected_p2p_status);
-	}
 }
 
 /**
