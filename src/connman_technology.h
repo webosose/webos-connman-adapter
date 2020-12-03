@@ -48,6 +48,7 @@ typedef struct connman_technology
 	gchar *tethering_identifier;
 	gchar *tethering_passphrase;
 	gchar *tethering_ipaddress;
+	GStrv interfaces;
 	gboolean powered;
 	gboolean connected;
 	gboolean tethering;

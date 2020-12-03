@@ -122,10 +122,12 @@ typedef struct connman_service
 	gchar *path;
 	gchar *identifier;
 	gchar *name; /* Service name, can be null for hidden wifi networks */
+	gchar *interface_name; /* Interface name */
 	gchar *display_name; /* Service display name, can be null for hidden wifi networks */
 	gchar *state;
 	gchar *error;
 	gchar *address;
+	gchar *macaddress;
 
 	guchar strength;
 	GStrv security;

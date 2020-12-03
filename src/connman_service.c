@@ -1373,7 +1373,6 @@ void connman_service_update_properties(connman_service_t *service,
 		GVariant *val_v = g_variant_get_child_value(property, 1);
 		GVariant *val = g_variant_get_variant(val_v);
 		const gchar *key = g_variant_get_string(key_v, NULL);
-
 		if (!g_strcmp0(key, "Name"))
 		{
 			char *name =  g_variant_dup_string(val, NULL);
@@ -1472,6 +1471,44 @@ void connman_service_update_properties(connman_service_t *service,
 		{
 			g_free(service->address);
 			service->address = g_variant_dup_string(val, NULL);
+		}
+		else if (!g_strcmp0(key, "Ethernet"))
+		{
+			GVariant *v = g_variant_get_child_value(property, 1);
+			GVariant *va = g_variant_get_child_value(v, 0);
+			gsize j;
+
+			for (j = 0; j < g_variant_n_children(va); j++)
+			{
+				GVariant *ethernet = g_variant_get_child_value(va, j);
+				GVariant *ekey_v = g_variant_get_child_value(ethernet, 0);
+				const gchar *ekey = g_variant_get_string(ekey_v, NULL);
+
+				if (!g_strcmp0(ekey, "Interface"))
+				{
+					GVariant *ifacev = g_variant_get_child_value(ethernet, 1);
+					GVariant *ifaceva = g_variant_get_variant(ifacev);
+					g_free(service->interface_name);
+					service->interface_name = g_variant_dup_string(ifaceva, NULL);
+					g_variant_unref(ifacev);
+					g_variant_unref(ifaceva);
+					WCALOG_DEBUG("Interface Name %s", service->interface_name);
+				}
+				else if (!g_strcmp0(ekey, "Address"))
+				{
+					GVariant *macv = g_variant_get_child_value(ethernet, 1);
+					GVariant *macva = g_variant_get_variant(macv);
+					g_free(service->macaddress);
+					service->macaddress = g_variant_dup_string(macva, NULL);
+					g_variant_unref(macv);
+					g_variant_unref(macva);
+					WCALOG_DEBUG("Interface Mac %s", service->macaddress);
+				}
+				g_variant_unref(ethernet);
+				g_variant_unref(ekey_v);
+			}
+			g_variant_unref(v);
+			g_variant_unref(va);
 		}
 		else if (!g_strcmp0(key, "BSS"))
 		{
@@ -1662,6 +1699,9 @@ void connman_service_free(gpointer data, gpointer user_data)
 	g_free(service->name);
 	service->name = NULL;
 
+	g_free(service->interface_name);
+	service->interface_name = NULL;
+
 	g_free(service->display_name);
 	service->display_name = NULL;
 
@@ -1673,6 +1713,9 @@ void connman_service_free(gpointer data, gpointer user_data)
 
 	g_free(service->address);
 	service->address = NULL;
+
+	g_free(service->macaddress);
+	service->macaddress = NULL;
 
 	g_strfreev(service->security);
 	service->security = NULL;

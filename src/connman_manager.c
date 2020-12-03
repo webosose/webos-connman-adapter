@@ -200,7 +200,7 @@ static gboolean service_on_configured_iface(GVariant *service_v)
 					g_variant_unref(ifaceva);
 
 					if (!g_strcmp0(iface, CONNMAN_WIFI_INTERFACE_NAME) ||
-					        !g_strcmp0(iface, CONNMAN_WIRED_INTERFACE_NAME))
+					        g_str_has_prefix (iface, "eth"))
 					{
 						return TRUE;
 					}
