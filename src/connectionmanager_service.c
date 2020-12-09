@@ -84,6 +84,8 @@ gboolean p2p_connected = FALSE;
 guint block_getstatus_response = 0;
 gboolean wifi_tethering = FALSE;
 gboolean wired_plugged = FALSE;
+guint available_lan_interface = 0;
+
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
 char getinfo_cur_wired_mac_address[MAC_ADDR_STRING_LEN]={0};
@@ -418,15 +420,12 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	jobject_put(*reply, J_CSTR_TO_JVAL("offlineMode"),
 	            jstring_create(offlineMode ? "enabled" : "disabled"));
 
-	jvalue_ref connected_wired_status = jobject_create();
-	jvalue_ref disconnected_wired_status = jobject_create();
+	jvalue_ref wired_interfaces = jobject_create();
 	jvalue_ref connected_wifi_status = jobject_create();
 	jvalue_ref disconnected_wifi_status = jobject_create();
 	jvalue_ref connected_p2p_status = jobject_create();
 	jvalue_ref disconnected_p2p_status = jobject_create();
 
-	jobject_put(disconnected_wired_status, J_CSTR_TO_JVAL("state"),
-	            jstring_create("disconnected"));
 	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("state"),
 	            jstring_create("disconnected"));
 	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("tetheringEnabled"),
@@ -435,24 +434,62 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	            jstring_create("disconnected"));
 
 	/* get the service which is currently connecting or already in connected */
+	GSList *iter;
+	connman_technology_t *technology = NULL;
+	for (iter = manager->technologies ; NULL != iter; iter = iter->next)
+	{
+		technology = (struct connman_technology *)(iter->data);
+		if (!g_strcmp0(technology->type, "ethernet"))
+		{
+			int n = 0;
+			jvalue_ref interface_obj = jarray_create(NULL);
+			for (n = 0; n < g_strv_length(technology->interfaces); n++)
+			{
+				gboolean isPlugged = false;
+				connman_service_t *connected_wired_service =
+					connman_manager_get_connected_service_by_interfaceName(manager->wired_services,technology->interfaces[n],&isPlugged);
+				jvalue_ref wired_info = jobject_create();
+				if (NULL != connected_wired_service)
+				{
+					update_connection_status(connected_wired_service, &wired_info);
+					int connman_state = 0;
+					connman_state = connman_service_get_state(connected_wired_service->state);
+					if(connman_state == CONNMAN_SERVICE_STATE_ONLINE)
+					{
+						jobject_put(wired_info, J_CSTR_TO_JVAL("default"), jboolean_create(true));
+					}
+					jobject_put(wired_info, J_CSTR_TO_JVAL("plugged"),jboolean_create(true));
+				}
+				else
+				{
+					jobject_put(wired_info, J_CSTR_TO_JVAL("interfaceName"),jstring_create(technology->interfaces[n]));
+					jobject_put(wired_info, J_CSTR_TO_JVAL("plugged"),jboolean_create(isPlugged));
+					jobject_put(wired_info, J_CSTR_TO_JVAL("state"), jstring_create("disconnected"));
+				}
+				jarray_append(interface_obj, wired_info);
+			}
+			jobject_put(wired_interfaces, J_CSTR_TO_JVAL("interface"), interface_obj);
+			break;
+		}
+	}
+
 	connman_service_t *connected_wired_service =
 	    connman_manager_get_connected_service(manager->wired_services);
 
 	if (NULL != connected_wired_service)
 	{
-		update_connection_status(connected_wired_service, &connected_wired_status);
-		jobject_put(connected_wired_status, J_CSTR_TO_JVAL("plugged"),
+		update_connection_status(connected_wired_service, &wired_interfaces);
+		jobject_put(wired_interfaces, J_CSTR_TO_JVAL("plugged"),
 		            jboolean_create(true));
-		jobject_put(*reply, J_CSTR_TO_JVAL("wired"), connected_wired_status);
-		j_release(&disconnected_wired_status);
 	}
 	else
 	{
-		jobject_put(disconnected_wired_status, J_CSTR_TO_JVAL("plugged"),
+		jobject_put(wired_interfaces, J_CSTR_TO_JVAL("plugged"),
 		            jboolean_create(wired_plugged ? true : false));
-		jobject_put(*reply, J_CSTR_TO_JVAL("wired"), disconnected_wired_status);
-		j_release(&connected_wired_status);
+		jobject_put(wired_interfaces, J_CSTR_TO_JVAL("state"), jstring_create("disconnected"));
 	}
+
+	jobject_put(*reply, J_CSTR_TO_JVAL("wired"), wired_interfaces);
 
 	connman_service_t *connected_wifi_service = NULL;
 
@@ -625,6 +662,7 @@ static gboolean check_update_is_needed(void)
 void connectionmanager_send_status_to_subscribers(void)
 {
 	bool wired_skip, wifi_skip = false;
+	guint connected_ethernet_interfaces = 0;
 
 	if (manager == NULL)
 		return;
@@ -667,8 +705,24 @@ void connectionmanager_send_status_to_subscribers(void)
 			}
 		}
 
+		GSList *iter;
+		connman_technology_t *technology = NULL;
+		for (iter = manager->technologies ; NULL != iter; iter = iter->next)
+		{
+			technology = (struct connman_technology *)(iter->data);
+			if (!g_strcmp0(technology->type, "ethernet"))
+			{
+				connected_ethernet_interfaces =  g_strv_length(technology->interfaces);
+				break;
+			}
+		}
+
+		if(available_lan_interface != connected_ethernet_interfaces)
+		{
+			available_lan_interface = connected_ethernet_interfaces;
+		}
 		// This routine affects when connected service for both wired and wifi exists.
-		if (connected_wired_service && connected_wifi_service)
+		else if (connected_wired_service && connected_wifi_service)
 		{
 			/* If there is no change of online_checking status for both wired and wifi,
 			 * getstatus will not be emitted. If there is a change of online_checking status
@@ -698,7 +752,6 @@ void connectionmanager_send_status_to_subscribers(void)
 
 	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
-
 	if (response_schema)
 	{
 		const char *payload = jvalue_tostring(reply, response_schema);
@@ -1972,7 +2025,6 @@ static void technology_property_changed_callback(gpointer data,
         const gchar *property, GVariant *value)
 {
 	connman_technology_t *technology = (connman_technology_t *)data;
-
 	if (NULL == technology)
 	{
 		return;
@@ -1980,7 +2032,6 @@ static void technology_property_changed_callback(gpointer data,
 
 	/* Need to send getstatus method to all com.webos.service.connectionmanager subscribers whenever the
 	   "powered" or "connected" state of the technology changes */
-
 	if (!g_strcmp0(property, "Powered") || !g_strcmp0(property, "Connected"))
 	{
 		if (manager) {
@@ -1992,6 +2043,7 @@ static void technology_property_changed_callback(gpointer data,
 	}
 	else if (!g_strcmp0(property, "Interfaces"))
 	{
+		connectionmanager_send_status_to_subscribers();
 		send_getinfo_to_subscribers();
 	}
 }

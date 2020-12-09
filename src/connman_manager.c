@@ -1306,6 +1306,57 @@ connman_service_t *connman_manager_get_connected_service(GSList *service_list)
 	return NULL;
 }
 
+
+/**
+ * Go through the manager's given services list and get the one by interface name which is in
+ * "ready" or "online" state (see header for API details) and updates plugged state of the
+ * ethernet cable
+ */
+
+connman_service_t *connman_manager_get_connected_service_by_interfaceName(GSList *service_list, const char *interface , gboolean* plugged)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		if(!g_strcmp0(interface, service->interface_name))
+		{
+			plugged = true;
+			int service_state = connman_service_get_state(service->state);
+
+			if(service_state == CONNMAN_SERVICE_STATE_ONLINE
+				|| service_state == CONNMAN_SERVICE_STATE_READY
+				|| service_state == CONNMAN_SERVICE_STATE_CONFIGURATION)
+			{
+				connected_service = service;
+				break;
+			}
+		}
+	}
+
+	if (connected_service != NULL)
+	{
+		GVariant *properties = connman_service_fetch_properties(connected_service);
+
+		if (NULL != properties)
+		{
+			connman_service_update_properties(connected_service, properties);
+			g_variant_unref(properties);
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
+
+
 /**
  * Go through the manager's given service list and find the currently connecting service
  * and return it.
