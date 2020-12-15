@@ -1,6 +1,7 @@
 {
     "exeName":"@WEBOS_INSTALL_SBINDIR@/webos-connman-adapter",
     "type":"regular",
+    "trustLevel": "oem",
     "allowedNames":["com.webos.service.wifi", "com.webos.service.connectionmanager"],
     "permissions": [
         {
