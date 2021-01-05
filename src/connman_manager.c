@@ -1358,6 +1358,33 @@ connman_service_t *connman_manager_get_connected_service_by_interfaceName(GSList
 
 
 /**
+ * Go through the manager's given services list and get the one by interface name
+ */
+
+connman_service_t *connman_manager_retreive_service_by_interfaceName(GSList *service_list, const char *interface)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		if(!g_strcmp0(interface, service->interface_name))
+		{
+			connected_service = service;
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
+
+/**
  * Go through the manager's given service list and find the currently connecting service
  * and return it.
  */

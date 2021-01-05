@@ -188,6 +188,16 @@ extern connman_service_t *connman_manager_get_connected_service_by_interfaceName
     GSList *service_list, const char *interface, gboolean* plugged);
 
 /**
+ * Go through the manager's given services list and get the one by interface name
+ *
+ * @param[IN] service_list Manager's service list (wired of wifi)
+ * @param[IN] interface name of the interface which needs to be searched in the list
+ */
+
+extern connman_service_t *connman_manager_retreive_service_by_interfaceName(
+   GSList *service_list, const char *interface);
+
+/**
  * Register for manager's "properties_changed" signal, calling the provided function whenever the callback function
  * for the signal is called
  *

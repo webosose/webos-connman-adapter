@@ -1280,6 +1280,31 @@ gboolean connman_service_reject_peer(connman_service_t *service)
 }
 
 /**
+ * Set the given service as default interface(see header for API details)
+ */
+
+gboolean connman_service_set_default(connman_service_t *service)
+{
+	if (NULL == service)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+
+	connman_interface_service_call_set_default_sync(service->remote, NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_SERVICE_SET_DEFAULT_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
  * Register for incoming P2P requests  (see header for API details)
  */
 void connman_service_register_p2p_requests_cb(connman_service_t *service,
@@ -1492,17 +1517,15 @@ void connman_service_update_properties(connman_service_t *service,
 					service->interface_name = g_variant_dup_string(ifaceva, NULL);
 					g_variant_unref(ifacev);
 					g_variant_unref(ifaceva);
-					WCALOG_DEBUG("Interface Name %s", service->interface_name);
 				}
 				else if (!g_strcmp0(ekey, "Address"))
 				{
 					GVariant *macv = g_variant_get_child_value(ethernet, 1);
 					GVariant *macva = g_variant_get_variant(macv);
-					g_free(service->macaddress);
-					service->macaddress = g_variant_dup_string(macva, NULL);
+					g_free(service->mac_address);
+					service->mac_address = g_variant_dup_string(macva, NULL);
 					g_variant_unref(macv);
 					g_variant_unref(macva);
-					WCALOG_DEBUG("Interface Mac %s", service->macaddress);
 				}
 				g_variant_unref(ethernet);
 				g_variant_unref(ekey_v);
@@ -1714,8 +1737,8 @@ void connman_service_free(gpointer data, gpointer user_data)
 	g_free(service->address);
 	service->address = NULL;
 
-	g_free(service->macaddress);
-	service->macaddress = NULL;
+	g_free(service->mac_address);
+	service->mac_address = NULL;
 
 	g_strfreev(service->security);
 	service->security = NULL;

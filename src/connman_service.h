@@ -127,7 +127,7 @@ typedef struct connman_service
 	gchar *state;
 	gchar *error;
 	gchar *address;
-	gchar *macaddress;
+	gchar *mac_address;
 
 	guchar strength;
 	GStrv security;
@@ -281,6 +281,15 @@ extern gboolean connman_service_disconnect(connman_service_t *service);
  * @return FALSE if the disconnect call failed, TRUE otherwise
  */
 extern gboolean connman_service_reject_peer(connman_service_t *service);
+
+/**
+ * Set this service as default , this will make this service state online
+ *
+ * @param[IN]  service A service instance
+ *
+ * @return FALSE if the call failed, TRUE otherwise
+ */
+extern gboolean connman_service_set_default(connman_service_t *service);
 
 /**
  * remove a remote connman service

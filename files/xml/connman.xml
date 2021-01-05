@@ -149,6 +149,8 @@ limitations under the License.
 		</method>
 		<method name="RejectPeer">
 		</method>
+		<method name="SetDefault">
+		</method>
 		<signal name="PropertyChanged">
 			<arg type="s"/>
 			<arg type="v"/>

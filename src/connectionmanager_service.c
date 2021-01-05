@@ -2666,6 +2666,74 @@ cleanup:
 	return true;
 }
 
+static bool handle_set_default_interface(LSHandle *sh, LSMessage *message,
+                                    void *context)
+{
+	if (!connman_status_check(manager, sh, message))
+	{
+		return true;
+	}
+
+	connman_service_t *service = NULL;
+	gchar *interfaceName = NULL;
+
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(ifName, string)) REQUIRED_1(ifName))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref interfaceObj = {0};
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ifName"), &interfaceObj))
+	{
+		raw_buffer interface_buf = jstring_get(interfaceObj);
+		interfaceName = g_strdup(interface_buf.m_str);
+		jstring_free_buffer(interface_buf);
+	}
+
+	service = connman_manager_retreive_service_by_interfaceName(manager->wired_services ,interfaceName);
+
+	if (NULL != service)
+	{
+		int service_state = connman_service_get_state(service->state);
+
+		if(service_state == CONNMAN_SERVICE_STATE_ONLINE)
+		{
+			LSMessageReplyCustomError(sh, message, "Already default",
+									WCA_API_ERROR_INTERFACE_ALREADY_DEFAULT);
+		}
+		else if(service_state == CONNMAN_SERVICE_STATE_READY
+			|| service_state == CONNMAN_SERVICE_STATE_CONFIGURATION)
+		{
+			if (connman_service_set_default(service))
+			{
+				LSMessageReplySuccess(sh, message);
+			}
+			else
+			{
+				LSMessageReplyErrorUnknown(sh, message);
+			}
+		}
+		else
+		{
+			LSMessageReplyCustomError(sh, message, "Invalid Interface",
+										WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+		}
+	}
+	else
+	{
+		LSMessageReplyCustomError(sh, message, "Invalid Interface",
+									WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+	}
+
+	g_free(interfaceName);
+	j_release(&parsedObj);
+	return true;
+}
+
 /**
  * @brief com.webos.service.connectionmanager service method table
  */
@@ -2683,6 +2751,7 @@ static LSMethod connectionmanager_methods[] =
 	{ LUNA_METHOD_SETTECHNOLOGYSTATE,   handle_set_technology_state_command },
 	{ LUNA_METHOD_SETPROXY,             handle_set_proxy_command },
 	{ LUNA_METHOD_FINDPROXYFORURL,      handle_find_proxy_for_url_command },
+	{ LUNA_METHOD_SETDEFAULT,           handle_set_default_interface },
 	{ },
 };
 
