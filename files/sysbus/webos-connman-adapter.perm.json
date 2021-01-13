@@ -1,12 +1,22 @@
 {
     "com.webos.service.wifi": [
-        "settings.read",
-        "devices",
-        "networking.internal"
+        "settings.query",
+        "networkconnection.query",
+        "networkconnection.management",
+        "wifi.query",
+        "wifi.management",
+        "configd.query",
+        "settings",
+        "devices"
     ],
     "com.webos.service.connectionmanager": [
-        "settings.read",
-        "devices",
-        "networking.internal"
+        "settings.query",
+        "networkconnection.query",
+        "networkconnection.management",
+        "wifi.query",
+        "wifi.management",
+        "configd.query",
+        "settings",
+        "devices"
     ]
 }
