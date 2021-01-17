@@ -164,6 +164,14 @@ extern connman_service_t *connman_manager_get_connected_service(
     GSList *service_list);
 
 /**
+* Go through the manager's given services list and get the one which is in 
+* "online" state , if none of the service is in online state then it returns
+* first available service which is in "ready" state 
+*/
+extern connman_service_t *connman_manager_get_default_service(
+    GSList *service_list);
+
+/**
  * Go through the manager's given service list and find the currently connecting service
  * and return it.
  *

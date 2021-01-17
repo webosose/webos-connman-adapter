@@ -474,7 +474,7 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	}
 
 	connman_service_t *connected_wired_service =
-	    connman_manager_get_connected_service(manager->wired_services);
+	    connman_manager_get_default_service(manager->wired_services);
 
 	if (NULL != connected_wired_service)
 	{
@@ -661,7 +661,7 @@ static gboolean check_update_is_needed(void)
 
 void connectionmanager_send_status_to_subscribers(void)
 {
-	bool wired_skip, wifi_skip = false;
+	bool wired_skip, wifi_skip ,update_required = false;
 	guint connected_ethernet_interfaces = 0;
 
 	if (manager == NULL)
@@ -712,12 +712,22 @@ void connectionmanager_send_status_to_subscribers(void)
 			technology = (struct connman_technology *)(iter->data);
 			if (!g_strcmp0(technology->type, "ethernet"))
 			{
+				for (int n = 0; n < g_strv_length(technology->interfaces); n++)
+				{
+					connman_service_t *service = connman_manager_retreive_service_by_interfaceName(manager->wired_services,technology->interfaces[n]);
+					if ((NULL != service) && (connman_service_is_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS)))
+					{
+						connman_service_unset_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS);
+						update_required = true;
+					}
+				}
 				connected_ethernet_interfaces =  g_strv_length(technology->interfaces);
 				break;
 			}
 		}
 
-		if(available_lan_interface != connected_ethernet_interfaces)
+
+		if((available_lan_interface != connected_ethernet_interfaces)|| (update_required))
 		{
 			available_lan_interface = connected_ethernet_interfaces;
 		}

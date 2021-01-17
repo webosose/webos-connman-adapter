@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -187,4 +187,25 @@ bool is_valid_wifi_passphrase(const char* passphrase, const char* security)
 		 */
 		return true;
 	}
+}
+
+bool is_vlan(const char* string)
+{
+	if (!string)
+	{
+		return false;
+	}
+
+	size_t len = strlen(string);
+	size_t i;
+
+	for (i = 0; i < len; i++)
+	{
+		if (string[i] == '.')
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

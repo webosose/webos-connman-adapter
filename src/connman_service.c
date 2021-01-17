@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -786,6 +786,17 @@ gboolean connman_service_get_ipinfo(connman_service_t *service)
 					g_variant_unref(methodva);
 				}
 
+				if (!g_strcmp0(ikey, "PrefixLength"))
+				{
+					GVariant *prefix_lengthv = g_variant_get_child_value(ipv4, 1);
+					GVariant *prefix_lengthva = g_variant_get_variant(prefix_lengthv);
+					const char *prefix_length = g_variant_get_data(prefix_lengthva);
+					service->ipinfo.ipv4.prefix_len = *prefix_length;
+
+					g_variant_unref(prefix_lengthv);
+					g_variant_unref(prefix_lengthva);
+				}
+
 				if (!g_strcmp0(ikey, "Netmask"))
 				{
 					GVariant *netmaskv = g_variant_get_child_value(ipv4, 1);
@@ -961,6 +972,53 @@ gboolean connman_service_get_proxyinfo(connman_service_t *service)
 	return TRUE;
 }
 
+static void connman_service_set_ip_rule(connman_service_t *service , bool status)
+{
+	WCALOG_DEBUG("connman_service_set_ip_rule");
+	if ((NULL != service->ipinfo.ipv4.address)&&
+		(NULL != service->ipinfo.ipv4.netmask)&&
+		(NULL != service->ipinfo.ipv4.gateway)&&
+		(NULL != service->interface_name) &&
+		(!is_vlan(service->interface_name)))
+	{
+		char addtable[80] = {0,};
+		WCALOG_DEBUG("connman_service_set_ip_rule %s", service->interface_name);
+		char* find_Id = service->interface_name;
+		find_Id +=3;
+		int table_Id = 0;
+		int assigned = sscanf(find_Id, "%d", &table_Id);
+		if(assigned > 0)
+		{
+			table_Id = table_Id+10;
+			WCALOG_DEBUG("connman_service_set_ip_rule Ready state address available %s ID %d", service->interface_name , table_Id);
+			sprintf(addtable,"ip route %s table %d default via %s", (status) ? "add" : "delete", table_Id , service->ipinfo.ipv4.gateway);
+			system(addtable);
+			char addDestrule[80] = {0,};
+			sprintf(addDestrule,"ip rule %s from  %s/%d table %d", (status) ? "add" : "delete", service->ipinfo.ipv4.address, service->ipinfo.ipv4.prefix_len, table_Id );
+			system(addDestrule);
+			char addSrcrule[80] = {0,};
+			sprintf(addSrcrule,"ip rule %s to %s/%d table %d", (status) ? "add" : "delete", service->ipinfo.ipv4.address, service->ipinfo.ipv4.prefix_len, table_Id );
+			system(addSrcrule);
+			service->iprule_added = status;
+		}
+	}
+}
+
+static void connman_service_create_ip_rule(connman_service_t *service)
+{
+	WCALOG_DEBUG("connman_service_create_ip_rule ");
+	if (!service->iprule_added &&
+		(!g_strcmp0(service->state, "ready")))
+		connman_service_set_ip_rule(service,true);
+}
+
+static void connman_service_delete_ip_rule(connman_service_t *service)
+{
+	WCALOG_DEBUG("connman_service_delete_ip_rule ");
+	if ( service->iprule_added)
+		connman_service_set_ip_rule(service,false);
+}
+
 /**
  * @brief Check service->state is changed
  */
@@ -1000,10 +1058,22 @@ static void connman_service_advance_state(connman_service_t *service,
 		{
 			(service->handle_property_change_fn)((gpointer) service, "State", v);
 		}
+
+#ifdef MULTIPLE_ROUTING_TABLE
+		if((!g_strcmp0(new_state, "ready")) && (service->type == CONNMAN_SERVICE_TYPE_ETHERNET))
+		{
+			WCALOG_DEBUG("connman_service_advance_state  Ready state");
+			connman_service_get_ipinfo(service);
+			connman_service_create_ip_rule(service);
+		}
+		else if((!g_strcmp0(new_state, "online")) && (service->type == CONNMAN_SERVICE_TYPE_ETHERNET))
+		{
+			connman_service_delete_ip_rule(service);
+		}
+#endif
 	}
+	WCALOG_DEBUG("connman_service_advance_state exit");
 }
-
-
 /**
  * @brief Check service->online is changed
  */
@@ -1515,6 +1585,9 @@ void connman_service_update_properties(connman_service_t *service,
 					GVariant *ifaceva = g_variant_get_variant(ifacev);
 					g_free(service->interface_name);
 					service->interface_name = g_variant_dup_string(ifaceva, NULL);
+#ifdef MULTIPLE_ROUTING_TABLE
+					connman_service_create_ip_rule(service);
+#endif
 					g_variant_unref(ifacev);
 					g_variant_unref(ifaceva);
 				}
@@ -1678,7 +1751,7 @@ connman_service_t *connman_service_new(GVariant *variant)
 	}
 
 	g_dbus_proxy_set_default_timeout(service->remote, DBUS_CALL_TIMEOUT);
-
+	service->iprule_added = false;
 	service->sighandler_id = g_signal_connect_data(G_OBJECT(service->remote),
 	                         "property-changed",
 	                         G_CALLBACK(property_changed_cb), service, NULL, 0);
@@ -1712,6 +1785,10 @@ void connman_service_free(gpointer data, gpointer user_data)
 	}
 
 	WCALOG_DEBUG("Service free name %s, path %s", service->name, service->path);
+
+#ifdef MULTIPLE_ROUTING_TABLE
+	connman_service_delete_ip_rule(service);
+#endif
 
 	g_free(service->path);
 	service->path = NULL;

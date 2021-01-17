@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2020 LG Electronics, Inc.
+# Copyright (c) 2012-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,6 +110,10 @@ endif()
 
 if (ENABLE_SCAN_ON_SOFTAP)
 webos_add_compiler_flags(ALL -DENABLE_SCAN_ON_SOFTAP)
+endif()
+
+if (MULTIPLE_ROUTING_TABLE)
+webos_add_compiler_flags(ALL -DMULTIPLE_ROUTING_TABLE)
 endif()
 
 include_directories(src ${GDBUS_IF_DIR})

@@ -1306,6 +1306,52 @@ connman_service_t *connman_manager_get_connected_service(GSList *service_list)
 	return NULL;
 }
 
+/**
+ * Go through the manager's given services list and get the one which is in
+ * "online" state , if none of the service is in online state then it returns 
+ * first available service which is in "ready" state
+ */
+connman_service_t *connman_manager_get_default_service(GSList *service_list)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		int service_state = connman_service_get_state(service->state);
+
+		if(service_state == CONNMAN_SERVICE_STATE_ONLINE)
+		{
+			connected_service = service;
+			break;
+		}
+		else if((connected_service == NULL) && ( service_state == CONNMAN_SERVICE_STATE_READY || 
+			service_state == CONNMAN_SERVICE_STATE_CONFIGURATION))
+		{
+			connected_service = service;
+		}
+	}
+
+	if (connected_service != NULL)
+	{
+		GVariant *properties = connman_service_fetch_properties(connected_service);
+
+		if (NULL != properties)
+		{
+			connman_service_update_properties(connected_service, properties);
+			g_variant_unref(properties);
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
 
 /**
  * Go through the manager's given services list and get the one by interface name which is in

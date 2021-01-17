@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ typedef struct ipv4info
 	gchar *address;
 	gchar *netmask;
 	gchar *gateway;
+	gint prefix_len;
 } ipv4info_t;
 
 /**
@@ -166,6 +167,7 @@ typedef struct connman_service
 	gchar *ssid; /* Wifi service ssid, can be null for hidden networks */
 	gsize ssid_len;
 	GCancellable *cancellable;
+	gboolean iprule_added;
 } connman_service_t;
 
 /**
