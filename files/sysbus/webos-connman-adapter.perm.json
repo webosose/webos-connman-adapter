@@ -5,9 +5,7 @@
         "networkconnection.management",
         "wifi.query",
         "wifi.management",
-        "configd.query",
-        "settings",
-        "devices"
+        "systemconfig.query"
     ],
     "com.webos.service.connectionmanager": [
         "settings.query",
@@ -15,8 +13,6 @@
         "networkconnection.management",
         "wifi.query",
         "wifi.management",
-        "configd.query",
-        "settings",
-        "devices"
+        "systemconfig.query"
     ]
 }
