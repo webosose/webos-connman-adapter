@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,6 +88,31 @@ static gboolean report_error_cb(ConnmanInterfaceAgent *interface,
 	return TRUE;
 }
 
+static gboolean request_peer_authorization_cb(
+                                 ConnmanInterfaceAgent *interface,
+                                 GDBusMethodInvocation *invocation,
+                                 const gchar *path,
+                                 GVariant *fields,
+                                 gpointer user_data)
+{
+	connman_agent_t *agent = user_data;
+	GVariant *response = NULL;
+
+	if (agent->request_input_cb == NULL)
+	{
+		g_dbus_method_invocation_return_dbus_error(invocation, AGENT_ERROR_CANCELED,
+		        "No handler available");
+	}
+	else
+	{
+		response = agent->request_input_cb(fields, agent->request_input_data);
+		connman_interface_agent_complete_request_peer_authorization(agent->interface,
+								invocation, response);
+	}
+
+	return TRUE;
+}
+
 static void bus_acquired_cb(GDBusConnection *connection, const gchar *name,
                             gpointer user_data)
 {
@@ -100,6 +125,10 @@ static void bus_acquired_cb(GDBusConnection *connection, const gchar *name,
 	g_signal_connect(agent->interface, "handle-request-input",
 	                 G_CALLBACK(request_input_cb), agent);
 	g_signal_connect(agent->interface, "handle-report-error",
+	                 G_CALLBACK(report_error_cb), agent);
+	g_signal_connect(agent->interface, "handle-request-peer-authorization",
+	                 G_CALLBACK(request_peer_authorization_cb), agent);
+	g_signal_connect(agent->interface, "handle-report-peer-error",
 	                 G_CALLBACK(report_error_cb), agent);
 
 	error = NULL;

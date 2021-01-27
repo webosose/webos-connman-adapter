@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -106,6 +106,8 @@ extern PmLogContext gLogContext;
 #define MSGID_MANAGER_CHANGE_SAVED_SERVICE_ERROR        "MGR_CHANGE_SAVED_SERVICE_ERROR"
 #define MSGID_MANAGER_FIELDS_ERROR                      "MGR_FIELDS_ERROR"
 #define MSGID_MANAGER_SET_WOL_WOWL_ERROR                "MGR_SET_WOL_WOWL_ERR"
+#define MSGID_MANAGER_P2P_SRV_REGISTER_ERROR            "MGR_P2P_SRV_REG_ERR"
+#define MSGID_MANAGER_P2P_SRV_UNREGISTER_ERROR          "MGR_P2P_SRV_UNREG_ERR"
 
 /** connman_service.c */
 #define MSGID_SERVICE_CONNECT_ERROR                     "SRVC_CONNECT_ERR"
@@ -202,6 +204,8 @@ extern PmLogContext gLogContext;
 #define MSGID_P2P_DELETE_PROFILE                        "P2P_DELETE_PROFILE"
 #define MSGID_P2P_METHODS_LUNA_ERROR                    "P2P_METHODS_LUNA_ERR"
 #define MSGID_SETTINGS_SERVICE_REG_ERROR                "SETTINGS_SRVC_REG_ERR"
+#define MSGID_P2P_SERVICE_CONNECT_ERROR                 "P2P_SRVC_CONNECT_ERR"
+#define MSGID_P2P_SERVICE_DISCONNECT_ERROR              "P2P_SRVC_DISCONNECT_ERR"
 
 /* lunaservice_utils.c */
 #define MSGID_LUNA_CREATE_JSON_FAILED                   "LUNA_CREATE_JSON_FAILED"

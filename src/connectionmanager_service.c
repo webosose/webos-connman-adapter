@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -86,9 +86,11 @@ gboolean wifi_tethering = FALSE;
 gboolean wired_plugged = FALSE;
 guint available_lan_interface = 0;
 
+guint p2p_connected_count;
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
 char getinfo_cur_wired_mac_address[MAC_ADDR_STRING_LEN]={0};
+char getinfo_cur_p2p_mac_address[MAC_ADDR_STRING_LEN]={0};
 
 static void getinfo_update(void);
 
@@ -272,7 +274,7 @@ static void update_connection_status(connman_service_t *connected_service,
 static void group_property_changed_callback(gpointer data,
         const gchar *property, GVariant *value)
 {
-	if (!g_strcmp0(property, "LocalAddress"))
+	if (!g_strcmp0(property, "LocalAddress") || !g_strcmp0(property, "DHCPAddress"))
 	{
 		connman_service_t *connected_p2p_service =
 		    connman_manager_get_connected_service(manager->p2p_services);
@@ -282,6 +284,7 @@ static void group_property_changed_callback(gpointer data,
 			connman_service_set_changed(connected_p2p_service,
 			                            CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS);
 			connectionmanager_send_status_to_subscribers();
+			send_peer_information_to_subscribers();
 		}
 	}
 }
@@ -381,6 +384,12 @@ static void append_p2p_connection_status(jvalue_ref *status,
 				{
 					jobject_put(peer_info, J_CSTR_TO_JVAL("peerIp"),
 					            jstring_create(service->ipinfo.ipv4.address));
+				}
+
+				if (service->peer.wfd_enabled)
+				{
+					jobject_put(peer_info, J_CSTR_TO_JVAL("wfdEnabled"),
+					            jboolean_create(service->peer.wfd_enabled));
 				}
 
 				jvalue_ref peer_list_j = jobject_create();
@@ -520,8 +529,20 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 
 	if (is_wifi_powered())
 	{
-		connected_p2p_service = connman_manager_get_connected_service(
+		connected_p2p_service = connman_manager_get_p2p_connected_service(
 		                            manager->p2p_services);
+	}
+
+	if (NULL != connected_p2p_service)
+	{
+		append_p2p_connection_status(&connected_p2p_status, connected_p2p_service);
+		jobject_put(*reply, J_CSTR_TO_JVAL("wifiDirect"), connected_p2p_status);
+		j_release(&disconnected_p2p_status);
+	}
+	else
+	{
+		jobject_put(*reply, J_CSTR_TO_JVAL("wifiDirect"), disconnected_p2p_status);
+		j_release(&connected_p2p_status);
 	}
 }
 
@@ -639,7 +660,7 @@ static gboolean check_update_is_needed(void)
 
 	if (is_wifi_powered())
 	{
-		connected_p2p_service = connman_manager_get_connected_service(
+		connected_p2p_service = connman_manager_get_p2p_connected_service(
 		                            manager->p2p_services);
 	}
 
@@ -647,6 +668,14 @@ static gboolean check_update_is_needed(void)
 	{
 		needed = TRUE;
 	}
+
+	guint p2p_connected_count_now = connman_manager_get_p2p_connected_service_count(manager->p2p_services);
+	if(p2p_connected_count != p2p_connected_count_now)
+	{
+		needed = TRUE;
+	}
+
+	p2p_connected_count = p2p_connected_count_now;
 
 	p2p_connected = (connected_p2p_service != NULL && manager->groups != NULL);
 
@@ -1746,6 +1775,14 @@ static void getinfo_add_response(jvalue_ref* reply, bool subscribed)
 		jobject_put(*reply, J_CSTR_TO_JVAL("wiredInfo"), wired_info);
 	}
 
+	if (getinfo_cur_p2p_mac_address[0])
+	{
+		jvalue_ref p2p_info = jobject_create();
+		jobject_put(p2p_info,
+		            J_CSTR_TO_JVAL("macAddress"),
+		            jstring_create(getinfo_cur_p2p_mac_address));
+		jobject_put(*reply, J_CSTR_TO_JVAL("p2pInfo"), p2p_info);
+	}
 }
 
 void send_getinfo_to_subscribers(void)
@@ -1778,6 +1815,7 @@ static void getinfo_update(void)
 
 	char wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
 	char wired_mac_address[MAC_ADDR_STRING_LEN]={0};
+	char p2p_mac_address[MAC_ADDR_STRING_LEN]={0};
 	gsize i;
 
 	if (retrieve_mac_address(CONNMAN_WIFI_INTERFACE_NAME, wifi_mac_address, MAC_ADDR_STRING_LEN) == 0)
@@ -1822,6 +1860,28 @@ static void getinfo_update(void)
 		}
 
 		WCALOG_ERROR(MSGID_WIRED_MAC_ADDR_ERROR,0,"Error in fetching mac address for wired interface");
+	}
+
+	if (retrieve_mac_address(CONNMAN_P2P_INTERFACE_NAME, p2p_mac_address, MAC_ADDR_STRING_LEN) == 0)
+	{
+		if (g_strcmp0(getinfo_cur_p2p_mac_address, p2p_mac_address))
+		{
+			i = g_strlcpy(getinfo_cur_p2p_mac_address, p2p_mac_address, MAC_ADDR_STRING_LEN);
+			if (i != strlen(p2p_mac_address))
+			{
+				WCALOG_ERROR(MSGID_WIFI_MAC_ADDR_ERROR,0,"Failed to copy mac address for p2p interface");
+			}
+		}
+	}
+	else
+	{
+		/** Mark as invalid */
+		if (getinfo_cur_p2p_mac_address[0])
+		{
+			getinfo_cur_p2p_mac_address[0] = 0;
+		}
+
+		WCALOG_ERROR(MSGID_WIFI_MAC_ADDR_ERROR,0,"Error in fetching mac address for p2p interface");
 	}
 }
 

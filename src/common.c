@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -118,6 +118,18 @@ gboolean wifi_technology_status_check(LSHandle *sh, LSMessage *message)
 	return TRUE;
 }
 
+gboolean p2p_technology_status_check(LSHandle *sh, LSMessage *message)
+{
+	if (NULL == connman_manager_find_p2p_technology(manager))
+	{
+		LSMessageReplyCustomError(sh, message, "WiFi technology unavailable",
+					WCA_API_ERROR_P2P_TECH_UNAVAILABLE);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 gboolean wifi_technology_status_check_with_subscription(LSHandle *sh,
         LSMessage *message, bool subscribed)
 {
@@ -131,6 +143,21 @@ gboolean wifi_technology_status_check_with_subscription(LSHandle *sh,
 
 	return TRUE;
 }
+
+gboolean p2p_technology_status_check_with_subscription(LSHandle *sh,
+	LSMessage *message, bool subscribed)
+{
+	if (NULL == connman_manager_find_p2p_technology(manager))
+	{
+		LSMessageReplyCustomErrorWithSubscription(sh, message,
+			"WiFi technology unavailable",
+			WCA_API_ERROR_P2P_TECH_UNAVAILABLE, subscribed);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 /**
  * @brief Set the wifi power status according to wether network access is allowed or not
  */

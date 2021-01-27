@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@
 typedef enum
 {
 	CONNMAN_SERVICE_TYPE_UPNP = 0,
-	CONNMAN_SERVICE_TYPE_BONJOUR
+	CONNMAN_SERVICE_TYPE_BONJOUR,
+	CONNMAN_SERVICE_TYPE_WiFiDisplayIEs
 } connman_service_type;
 
 extern gboolean connman_service_discovery_request(const connman_service_type

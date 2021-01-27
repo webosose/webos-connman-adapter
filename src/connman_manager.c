@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,9 +24,15 @@
 #include "connman_manager.h"
 #include "logging.h"
 #include "connectionmanager_service.h"
+#include "utils.h"
+#include "wfdsie/wfdinfoelemwrapper.h"
 
 
 wca_support_connman_update_callbacks *connman_update_callbacks = { { NULL } };
+
+/*Default UPnP service version is maintained as 10
+as no input is available via luna command*/
+#define DEFAULT_UPNP_VERSION 10
 
 /**
  * Retrieve all the properties of the given manager instance
@@ -58,6 +64,216 @@ GVariant *connman_manager_get_properties(connman_manager_t *manager)
 	}
 
 	return ret;
+}
+
+/**
+ * Function to add wifi direct service type
+ *
+ * @param[IN]  manager A connman manager instance
+ * @param[IN]  type A P2P service type
+ * @param[IN]  description A string UPnP service type
+ * @param[IN]  query A string containing BonjourQuery
+ * @param[IN]  response A string containing BonjourResponse
+ *
+ * @return A Boolean stating service register is successful or not
+  */
+
+gboolean connman_manager_p2p_service_register (connman_manager_t *manager,
+                        const connman_p2p_service_type type,
+                        const gchar *description,
+                        const gchar *query, const gchar *response, const void* infoelemarray, bool is_master)
+{
+
+	if (!manager)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+	gboolean master = FALSE;
+	GVariantBuilder *builder = NULL;
+	GVariant *arguments = NULL;
+
+	switch (type)
+	{
+		case CONNMAN_SERVICE_TYPE_P2P_UPNP:
+		{
+			if (NULL == description)
+			{
+				return FALSE;
+			}
+			WCALOG_DEBUG("connman_manager_service_register = %s", description);
+			builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add(builder, "{sv}", "UpnpService",
+	                      g_variant_new_string(description));
+			g_variant_builder_add(builder, "{sv}", "UpnpVersion",
+	                      g_variant_new_int32(DEFAULT_UPNP_VERSION));
+			arguments = g_variant_builder_end (builder);
+			g_variant_builder_unref(builder);
+			connman_interface_manager_call_register_peer_service_sync(manager->remote,
+			        arguments, master, NULL, &error);
+			break;
+		}
+
+		case CONNMAN_SERVICE_TYPE_P2P_BONJOUR:
+		{
+			if (NULL == query)
+			{
+				return FALSE;
+			}
+			WCALOG_DEBUG("BonjourQuery = %s BonjourResponse = %s", query, response);
+			builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add(builder, "{sv}", "BonjourQuery",
+	                      g_variant_new_string(query));
+			g_variant_builder_add(builder, "{sv}", "BonjourResponse",
+	                      g_variant_new_string(response));
+			arguments = g_variant_builder_end (builder);
+			g_variant_builder_unref(builder);
+			connman_interface_manager_call_register_peer_service_sync(manager->remote,
+			        arguments, master, NULL, &error);
+			break;
+		}
+
+                case CONNMAN_SERVICE_TYPE_P2P_WiFiDisplayIEs:
+                {
+                        if (NULL == infoelemarray)
+                        {
+                                return FALSE;
+                        }
+                        InformationElementArray* array = (InformationElementArray*) infoelemarray;
+                        WCALOG_DEBUG("WiFiDisplayIEs array length %d", array->length);
+
+                        for (size_t i = 0; i < array->length; i++) {
+                                WCALOG_DEBUG("WiFiDisplayIEs array bytes %02X", array->bytes[i]);
+                        }
+
+                        builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+                        g_variant_builder_add (builder, "{sv}", "WiFiDisplayIEs",
+                                g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+                                                      array->bytes,
+                                                      array->length,
+                                                      1));
+                        arguments = g_variant_builder_end (builder);
+                        g_variant_builder_unref(builder);
+                        connman_interface_manager_call_register_peer_service_sync(manager->remote,
+                                arguments, is_master, NULL, &error);
+                        break;
+                }
+
+		default:
+			return FALSE;
+	}
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_MANAGER_P2P_SRV_REGISTER_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * Function to remove wifi direct service type
+ *
+ * @param[IN]  manager A connman manager instance
+ * @param[IN]  type A P2P service type
+ * @param[IN]  description A string UPnP service type
+ * @param[IN]  query A string containing BonjourQuery
+ * @param[IN]  response A string containing BonjourResponse
+ *
+ * @return A Boolean stating service register is successful or not
+  */
+
+gboolean connman_manager_p2p_service_unregister(connman_manager_t *manager,
+                         const connman_p2p_service_type type,
+                         const gchar *description, const gchar *query, const void* infoelemarray)
+{
+
+	if (!manager)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+	GVariantBuilder *builder = NULL;
+	GVariant *arguments = NULL;
+
+	switch (type)
+	{
+		case CONNMAN_SERVICE_TYPE_P2P_UPNP:
+		{
+			if (NULL == description)
+			{
+				return FALSE;
+			}
+			WCALOG_DEBUG("connman_manager_service_unregister = %s", description);
+			builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add(builder, "{sv}", "UpnpService",
+	                      g_variant_new_string(description));
+			g_variant_builder_add(builder, "{sv}", "UpnpVersion",
+	                      g_variant_new_int32(DEFAULT_UPNP_VERSION));
+			arguments = g_variant_builder_end (builder);
+			g_variant_builder_unref(builder);
+			connman_interface_manager_call_unregister_peer_service_sync(manager->remote,
+			        arguments, NULL, &error);
+			break;
+		}
+
+		case CONNMAN_SERVICE_TYPE_P2P_BONJOUR:
+		{
+			if (NULL == query)
+			{
+				return FALSE;
+			}
+			WCALOG_DEBUG("BonjourQuery = %s", query);
+			builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add(builder, "{sv}", "BonjourQuery",
+	                      g_variant_new_string(query));
+			arguments = g_variant_builder_end (builder);
+			g_variant_builder_unref(builder);
+			connman_interface_manager_call_unregister_peer_service_sync(manager->remote,
+			        arguments,NULL, &error);
+			break;
+		}
+                case CONNMAN_SERVICE_TYPE_P2P_WiFiDisplayIEs:
+                {
+                        if (NULL == infoelemarray)
+                        {
+                                return FALSE;
+                        }
+                        InformationElementArray* array = (InformationElementArray*) infoelemarray;
+                        WCALOG_DEBUG("WiFiDisplayIEs array length %d", array->length);
+
+                        for (size_t i = 0; i < array->length; i++) {
+                                WCALOG_DEBUG("WiFiDisplayIEs array bytes %02X", array->bytes[i]);
+                        }
+
+                        builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+                        g_variant_builder_add (builder, "{sv}", "WiFiDisplayIEs",
+                             g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+                                                      array->bytes,
+                                                      array->length,
+                                                      1));
+                        arguments = g_variant_builder_end (builder);
+                        g_variant_builder_unref(builder);
+                        connman_interface_manager_call_unregister_peer_service_sync(manager->remote,
+                             arguments,NULL, &error);
+                        break;
+               }
+               default:
+			return FALSE;
+	}
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_MANAGER_P2P_SRV_UNREGISTER_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /**
@@ -155,7 +371,8 @@ static connman_technology_t *find_technology_by_path(connman_manager_t *manager,
  * @return TRUE if the service is either on wifi/wired interface, FALSE otherwise
  */
 
-static gboolean service_on_configured_iface(GVariant *service_v)
+static gboolean service_on_configured_iface(GVariant *service_v,
+		gboolean *peer_service)
 {
 	if (NULL == service_v)
 	{
@@ -227,8 +444,9 @@ static gboolean service_on_configured_iface(GVariant *service_v)
 			g_variant_unref(v);
 			g_variant_unref(va);
 
-			if (!g_strcmp0(type, "Peer"))
+			if (!g_strcmp0(type, "peer"))
 			{
+				*peer_service = TRUE;
 				g_variant_unref(properties);
 				g_variant_unref(property);
 				g_variant_unref(key_v);
@@ -310,10 +528,14 @@ static connman_service_t* update_or_add_service(connman_manager_t *manager,
 	{
 		/* Only in case that the service was added as new one it contains all
 		 * properties and we can check wether it's on one of the supported
-		 * network interfaces. */
-		if (saved || service_on_configured_iface(service_v) == TRUE)
+		 * network interfaces. If the service is a cellular one we ignore the
+		 * interface check as the interface is just way to route data and not
+		 * the primary control point. */
+
+		gboolean peer_service = FALSE;
+		if (saved || service_on_configured_iface(service_v, &peer_service) == TRUE)
 		{
-			service = connman_service_new(service_v);
+			service = connman_service_new(service_v, peer_service);
 			add_service_to_list(manager, service, saved);
 		}
 	}
@@ -1263,6 +1485,40 @@ connman_technology_t *connman_manager_find_ethernet_technology(
 }
 
 /**
+ * Go through the manager's technologies list and get the p2p one
+ * (see header for API details)
+ */
+
+connman_technology_t *connman_manager_find_p2p_technology(
+    connman_manager_t *manager)
+{
+	if (NULL == manager)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+
+	for (iter = manager->technologies; NULL != iter; iter = iter->next)
+	{
+		connman_technology_t *tech = (struct connman_technology *)(iter->data);
+
+		if (!tech)
+		{
+			continue;
+		}
+
+		if (g_strcmp0("p2p", tech->type) == 0)
+		{
+			return tech;
+		}
+	}
+
+	return NULL;
+}
+
+
+/**
  * Go through the manager's given services list and get the one which is in
  * "ready" or "online" state (see header for API details)
  */
@@ -1304,6 +1560,70 @@ connman_service_t *connman_manager_get_connected_service(GSList *service_list)
 	}
 
 	return NULL;
+}
+
+connman_service_t *connman_manager_get_p2p_connected_service(GSList *service_list)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		int service_state = connman_service_get_state(service->state);
+		if(service_state == CONNMAN_SERVICE_STATE_ONLINE
+			|| service_state == CONNMAN_SERVICE_STATE_READY)
+		{
+			connected_service = service;
+			break;
+		}
+	}
+
+
+	if (connected_service != NULL)
+	{
+		GVariant *properties = connman_service_fetch_properties(connected_service);
+
+		if (NULL != properties)
+		{
+			connman_service_update_properties(connected_service, properties);
+			g_variant_unref(properties);
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
+
+guint connman_manager_get_p2p_connected_service_count(GSList *service_list)
+{
+	if (NULL == service_list)
+	{
+		return 0;
+	}
+
+	GSList *iter;
+	int count = 0;
+	connman_service_t *service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		int service_state = connman_service_get_state(service->state);
+
+		if(service_state == CONNMAN_SERVICE_STATE_ONLINE
+			|| service_state == CONNMAN_SERVICE_STATE_READY)
+		{
+			count++;
+		}
+	}
+
+	return count;
 }
 
 /**
@@ -1896,6 +2216,9 @@ connman_manager_t *connman_manager_new(void)
 
 	g_signal_connect(G_OBJECT(manager->remote), "services-changed",
 	                 G_CALLBACK(services_changed_cb), manager);
+
+	g_signal_connect(G_OBJECT(manager->remote), "peers-changed",
+			 G_CALLBACK(services_changed_cb), manager);
 
 	g_signal_connect(G_OBJECT(manager->remote), "saved-services-changed",
 	                 G_CALLBACK(saved_services_changed_cb), manager);

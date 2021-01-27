@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
  *
  */
 
+#include "common.h"
 #include "connman_technology.h"
 #include "connman_manager.h"
 #include "logging.h"
@@ -403,6 +404,7 @@ gboolean connman_technology_set_wfd(connman_technology_t *technology,
 		return FALSE;
 	}
 
+#ifdef CONNMAN_VER_1_1
 	GError *error = NULL;
 
 	connman_interface_technology_call_set_property_sync(technology->remote,
@@ -416,6 +418,7 @@ gboolean connman_technology_set_wfd(connman_technology_t *technology,
 		g_error_free(error);
 		return FALSE;
 	}
+#endif
 
 	technology->wfd = state;
 	return TRUE;
@@ -432,7 +435,7 @@ gboolean connman_technology_set_wfd_devtype(connman_technology_t *technology,
 	{
 		return FALSE;
 	}
-
+#ifdef CONNMAN_VER_1_1
 	GError *error = NULL;
 
 	connman_interface_technology_call_set_property_sync(technology->remote,
@@ -446,8 +449,160 @@ gboolean connman_technology_set_wfd_devtype(connman_technology_t *technology,
 		g_error_free(error);
 		return FALSE;
 	}
-
+#endif
 	technology->wfd_devtype = devtype;
+	return TRUE;
+}
+
+/**
+ * Set WFDSessionAvail (see header for API details)
+ */
+
+gboolean connman_technology_set_wfd_sessionavail(connman_technology_t
+        *technology, const gboolean sessionavail)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+#ifdef CONNMAN_VER_1_1
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "WFDSessionAvail",
+	        g_variant_new_variant(g_variant_new_boolean(sessionavail)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_WFD_SESSION_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+#endif
+	technology->wfd_sessionavail = sessionavail;
+	return TRUE;
+}
+
+/**
+ * Set WFDCPSupport (see header for API details)
+ */
+
+gboolean connman_technology_set_wfd_cpsupport(connman_technology_t *technology,
+        const gboolean cpsupport)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+#ifdef CONNMAN_VER_1_1
+
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "WFDCPSupport",
+	        g_variant_new_variant(g_variant_new_boolean(cpsupport)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_WFD_CPSUPPORT_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+#endif
+	technology->wfd_cpsupport = cpsupport;
+	return TRUE;
+}
+
+/**
+ * Set WFDRtspPort (see header for API details)
+ */
+
+gboolean connman_technology_set_wfd_rtspport(connman_technology_t *technology,
+        const guint32 rtspport)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+#ifdef CONNMAN_VER_1_1
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "WFDRtspPort",
+	        g_variant_new_variant(g_variant_new_uint32(rtspport)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_WFD_RTSPPORT_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+#endif
+	technology->wfd_rtspport = rtspport;
+	return TRUE;
+}
+
+/**
+ * Set P2P listen state (see header for API details)
+ */
+
+gboolean connman_technology_set_p2p_listen_state(connman_technology_t
+        *technology, gboolean state)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "P2PListen",
+	        g_variant_new_variant(g_variant_new_boolean(state)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_P2P_LISTEN_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	technology->p2p_listen = state;
+	return TRUE;
+}
+
+/**
+ * Set P2P persistent mode (see header for API details)
+ */
+
+gboolean connman_technology_set_p2p_persistent_mode(connman_technology_t
+        *technology, gboolean state)
+{
+	if (NULL == technology)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+
+	connman_interface_technology_call_set_property_sync(technology->remote,
+	        "P2PPersistent",
+	        g_variant_new_variant(g_variant_new_boolean(state)),
+	        NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_TECHNOLOGY_SET_P2P_PERSISTENT_ERROR,
+		                      error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	technology->persistent_mode = state;
 	return TRUE;
 }
 
@@ -503,9 +658,24 @@ gboolean connman_technology_scan_network(connman_technology_t *technology,
 	}
 
 	technology->calls_pending += 1;
-	connman_interface_technology_call_scan(technology->remote,
-	                                       NULL, connman_technology_scan_callback,
-	                                       (gpointer)technology);
+	if (p2p)
+	{
+		connman_technology_t *p2p_tech = connman_manager_find_p2p_technology(manager);
+
+		if (!p2p_tech)
+		{
+			return FALSE;
+		}
+		connman_interface_technology_call_scan(p2p_tech->remote,
+					NULL, connman_technology_scan_callback,
+					(gpointer)technology);
+	}
+	else
+	{
+		connman_interface_technology_call_scan(technology->remote,
+					NULL, connman_technology_scan_callback,
+					(gpointer)technology);
+	}
 
 	return TRUE;
 }
@@ -661,6 +831,10 @@ static void set_property_value(connman_technology_t *technology,
 	else if (!g_strcmp0(key, "P2PListen"))
 	{
 		technology->p2p_listen = g_variant_get_boolean(val);
+	}
+	else if (!g_strcmp0(key, "P2PListenChannel"))
+	{
+		technology->p2p_listen_channel= g_variant_get_uint32(val);
 	}
 	else if (!g_strcmp0(key, "P2PPersistent"))
 	{

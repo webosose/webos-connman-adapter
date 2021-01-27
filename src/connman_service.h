@@ -95,6 +95,7 @@ typedef struct bssinfo
 typedef struct peer
 {
 	gchar *address;
+	gchar *pri_dev_type;
 	gboolean group_owner;
 	gboolean wfd_enabled;
 	gboolean wfd_sessionavail;
@@ -422,7 +423,7 @@ extern void connman_service_register_p2p_requests_cb(connman_service_t *service,
  *
  * @param[IN] variant List of properties for a new service
  */
-extern connman_service_t *connman_service_new(GVariant *variant);
+extern connman_service_t *connman_service_new(GVariant *variant, gboolean p2p);
 
 /**
  * Free the connman service instance
@@ -448,6 +449,10 @@ extern gboolean connman_service_set_passphrase(connman_service_t *service,
 
 extern gboolean connman_service_is_connected(connman_service_t *service);
 extern gboolean connman_service_is_online(connman_service_t *service);
+extern gboolean connman_peer_connect(connman_service_t *service,
+                                 connman_service_connect_cb cb, gpointer user_data);
+extern gboolean connman_peer_disconnect(connman_service_t *service);
+
 
 #endif /* CONNMAN_SERVICE_H_ */
 

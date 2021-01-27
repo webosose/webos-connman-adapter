@@ -27,9 +27,16 @@
 #include "logging.h"
 #include "common.h"
 #include "connectionmanager_service.h"
+#include "wfdsie/wfdinfoelemwrapper.h"
+#include "wifi_p2p_service.h"
 
 /* gdbus default timeout is 25 seconds */
 #define DBUS_CALL_TIMEOUT   (120 * 1000)
+
+static bool subscibed_for_diagnostiecs = false;
+
+#define Bit1		0x02
+#define Bit0		0x01
 
 /**
  * Check if the type of the service is wifi (see header for API details)
@@ -259,6 +266,88 @@ gboolean connman_service_connect(connman_service_t *service,
 	return TRUE;
 }
 
+/**
+ * Asynchronous connect callback for a remote "connect" call for peer
+ */
+
+static void peer_connect_callback(GDBusConnection *connection, GAsyncResult *res,
+                             gpointer user_data)
+{
+	GError *error = NULL;
+	struct cb_data *cbd = user_data;
+	connman_service_t *service = cbd->user;
+	connman_service_connect_cb cb = cbd->cb;
+	gboolean ret = FALSE;
+
+	if (NULL == service->cancellable ||
+	        g_cancellable_is_cancelled(service->cancellable))
+	{
+		if (service->cancellable != NULL)
+		{
+			g_object_unref(service->cancellable);
+			service->cancellable = NULL;
+		}
+
+		if (cb != NULL)
+		{
+			cb(ret, cbd->data);
+		}
+
+		g_free(cbd);
+		return;
+	}
+
+	ret = connman_interface_peer_call_connect_finish((ConnmanInterfacePeer *)service->remote, res,
+	        &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_P2P_SERVICE_CONNECT_ERROR, error->message);
+
+		/* If the error is "AlreadyConnected" its not an error */
+		if (NULL != g_strrstr(error->message, "AlreadyConnected") ||
+			NULL != g_strrstr(error->message, "Operation aborted"))
+		{
+			ret = TRUE;
+		}
+
+		g_error_free(error);
+	}
+
+	if (cb != NULL)
+	{
+		cb(ret, cbd->data);
+	}
+
+	g_free(cbd);
+
+	g_object_unref(service->cancellable);
+	service->cancellable = NULL;
+}
+
+/**
+ * Connect to a remote connman peer (see header for API details)
+ */
+
+gboolean connman_peer_connect(connman_service_t *service,
+                                 connman_service_connect_cb cb, gpointer user_data)
+{
+	struct cb_data *cbd;
+
+	if (NULL == service)
+	{
+		return FALSE;
+	}
+
+	service->disconnecting = FALSE;
+	cbd = cb_data_new(cb, user_data);
+	cbd->user = service;
+	service->cancellable = g_cancellable_new();
+
+	connman_interface_peer_call_connect((ConnmanInterfacePeer *)service->remote, service->cancellable,
+	                                    (GAsyncReadyCallback) peer_connect_callback, cbd);
+	return TRUE;
+}
 
 /**
  * Disconnect from a remote connman service (see header for API details)
@@ -279,6 +368,32 @@ gboolean connman_service_disconnect(connman_service_t *service)
 	if (error)
 	{
 		WCALOG_ESCAPED_ERRMSG(MSGID_SERVICE_DISCONNECT_ERROR, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * Disconnect from a remote connman peer (see header for API details)
+ */
+
+gboolean connman_peer_disconnect(connman_service_t *service)
+{
+	if (NULL == service)
+	{
+		return FALSE;
+	}
+
+	GError *error = NULL;
+
+	service->disconnecting = TRUE;
+	connman_interface_peer_call_disconnect_sync((ConnmanInterfacePeer *)service->remote, NULL, &error);
+
+	if (error)
+	{
+		WCALOG_ESCAPED_ERRMSG(MSGID_P2P_SERVICE_DISCONNECT_ERROR, error->message);
 		g_error_free(error);
 		return FALSE;
 	}
@@ -1072,6 +1187,22 @@ static void connman_service_advance_state(connman_service_t *service,
 		}
 #endif
 	}
+
+	if (!subscibed_for_diagnostiecs && service->type == CONNMAN_SERVICE_TYPE_P2P
+				&& !g_strcmp0(service->state, "ready") && is_connected_peer())
+	{
+		connman_technology_t *technology = connman_manager_find_wifi_technology(manager);
+		connman_technology_update_properties(technology);
+		subscibed_for_diagnostiecs = true;
+	}
+	else if (subscibed_for_diagnostiecs && service->type == CONNMAN_SERVICE_TYPE_P2P
+				&& !g_strcmp0(service->state, "disconnect") && !is_connected_peer())
+	{
+		connman_technology_t *technology = connman_manager_find_wifi_technology(manager);
+		connman_technology_update_properties(technology);
+		subscibed_for_diagnostiecs = false;
+	}
+
 	WCALOG_DEBUG("connman_service_advance_state exit");
 }
 /**
@@ -1296,6 +1427,19 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 			                               "P2PPersistentReceived");
 		}
 	}
+	else if (!g_strcmp0(property, "PeerAdded"))
+	{
+		connman_service_t *connected_p2p_service = NULL;
+
+		if(manager)
+			connected_p2p_service = connman_manager_get_connected_service(manager->p2p_services);
+
+		if (NULL != service->handle_p2p_request_fn && connected_p2p_service)
+		{
+			service->handle_p2p_request_fn((gpointer)service, 0, NULL, NULL,
+			                               "PeerAdded");
+		}
+	}
 	else if (!g_strcmp0(property, "IPv6"))
 	{
 		connman_service_set_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS);
@@ -1305,6 +1449,16 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 	{
 		connman_service_set_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS);
 		connectionmanager_send_status_to_subscribers();
+	}
+
+	else if (!g_strcmp0(property, "IPv4"))
+	{
+		if (service->type == CONNMAN_SERVICE_TYPE_P2P && service->peer.group_owner) {
+			if (NULL != service->handle_property_change_fn)
+			{
+				(service->handle_property_change_fn)((gpointer) service, "IPv4", va);
+			}
+		}
 	}
 
 	g_variant_unref(va);
@@ -1337,7 +1491,7 @@ gboolean connman_service_reject_peer(connman_service_t *service)
 
 	GError *error = NULL;
 
-	connman_interface_service_call_reject_peer_sync(service->remote, NULL, &error);
+	connman_interface_peer_call_reject_peer_sync((ConnmanInterfacePeer *)service->remote, NULL, &error);
 
 	if (error)
 	{
@@ -1445,6 +1599,29 @@ void connman_service_update_display_name(connman_service_t *service)
 	WCALOG_INFO("SSID_CONVERSION", 0, "Convert result: service->ssid: %s --> service->display_name: %s", service->ssid, service->display_name);
 }
 
+static void p2p_parse_wfd_dev_info(unsigned char *wfd_subelems, int len,
+					struct peer* peer)
+{
+	if(len < 9)
+		return;
+
+	//Subelement ID is 0 for WFD Device Infomation
+	if(wfd_subelems[0] != 0x00)
+		return;
+
+	//Length field is 6 for WFD Device Information
+	if(wfd_subelems[1] != 0x00 && wfd_subelems[2] != 0x06)
+		return;
+
+	peer->wfd_enabled = TRUE;
+	peer->wfd_devtype = wfd_subelems[4] & (Bit0|Bit1);
+	peer->wfd_sessionavail = (wfd_subelems[4] >> 4) & (Bit0|Bit1);
+	peer->wfd_cpsupport = wfd_subelems[3] & Bit0;
+	peer->wfd_rtspport = (wfd_subelems[5] << 8) + wfd_subelems[6];
+
+	return;
+}
+
 /**
  * Update service properties from the supplied variant  (see header for API details)
  */
@@ -1508,7 +1685,7 @@ void connman_service_update_properties(connman_service_t *service,
 			{
 				service->type = CONNMAN_SERVICE_TYPE_ETHERNET;
 			}
-			else if (!g_strcmp0(v, "Peer"))
+			else if (!g_strcmp0(v, "Peer") || (!g_strcmp0(v, "peer")))
 			{
 				service->type = CONNMAN_SERVICE_TYPE_P2P;
 			}
@@ -1561,6 +1738,106 @@ void connman_service_update_properties(connman_service_t *service,
 		else if (!g_strcmp0(key, "RunOnlineCheck"))
 		{
 			service->online_checking = g_variant_get_boolean(val);
+		}
+		else if (!g_strcmp0(key, "P2P"))
+		{
+			gsize j;
+			service->peer.wfd_enabled = FALSE;
+
+			for (j = 0; j < g_variant_n_children(val); j++)
+			{
+				GVariant *p2p_property = g_variant_get_child_value(val, j);
+				GVariant *p2p_key_v = g_variant_get_child_value(p2p_property, 0);
+				GVariant *p2p_val_v = g_variant_get_child_value(p2p_property, 1);
+				GVariant *p2p_val = g_variant_get_variant(p2p_val_v);
+				const gchar *p2p_key = g_variant_get_string(p2p_key_v, NULL);
+
+				if (!g_strcmp0(p2p_key, "DeviceAddress"))
+				{
+					g_free(service->peer.address);
+					service->peer.address = g_variant_dup_string(p2p_val, NULL);
+				}
+				else if(!g_strcmp0(p2p_key, "DeviceType"))
+				{
+					g_free(service->peer.pri_dev_type);
+					service->peer.pri_dev_type = g_variant_dup_string(p2p_val, NULL);
+				}
+				else if (!g_strcmp0(p2p_key, "GroupOwner"))
+				{
+					service->peer.group_owner = g_variant_get_boolean(p2p_val);
+				}
+				else if (!g_strcmp0(p2p_key, "ConfigMethod"))
+				{
+					service->peer.config_method = g_variant_get_uint16(p2p_val);
+				}
+				else if (!g_strcmp0(p2p_key, "WFDDevType"))
+				{
+					service->peer.wfd_devtype = (connman_wfd_dev_type) g_variant_get_uint16(p2p_val);
+					service->peer.wfd_enabled = TRUE;
+				}
+				else if (!g_strcmp0(p2p_key, "WFDSessionAvail"))
+				{
+					service->peer.wfd_sessionavail = g_variant_get_boolean(p2p_val);
+				}
+				else if (!g_strcmp0(p2p_key, "WFDCPSupport"))
+				{
+					service->peer.wfd_cpsupport = g_variant_get_boolean(p2p_val);
+				}
+				else if (!g_strcmp0(p2p_key, "WFDRtspPort"))
+				{
+					service->peer.wfd_rtspport = g_variant_get_uint32(p2p_val);
+				}
+
+				g_variant_unref(p2p_property);
+				g_variant_unref(p2p_key_v);
+				g_variant_unref(p2p_val_v);
+				g_variant_unref(p2p_val);
+			}
+		}
+		else if (!g_strcmp0(key, "Services"))
+		{
+			WCALOG_DEBUG("in p2p service ");
+			GVariant *service_struct = g_variant_get_child_value(val, 0);
+			GVariant *service_array = g_variant_get_child_value(service_struct, 0);
+
+			gsize j;
+			for (j = 0; j < g_variant_n_children(service_array); j++) {
+				GVariant *service_property = g_variant_get_child_value(service_array, j);
+				GVariant *p2p_service_key_v = g_variant_get_child_value(service_property, 0);
+				GVariant *p2p_service_val_v = g_variant_get_child_value(service_property, 1);
+
+				const gchar *p2p_service_key = g_variant_get_string(p2p_service_key_v, NULL);
+				if (!g_strcmp0(p2p_service_key, "WiFiDisplayIEs")) {
+
+					GVariant *p2p_service_val = g_variant_get_variant(p2p_service_val_v);
+					unsigned long len = g_variant_get_size(p2p_service_val);
+
+					gchar *p2p_service_val_string = g_variant_print (p2p_service_val, TRUE);
+					WCALOG_DEBUG("P2p wifi display service %s size: %lu", p2p_service_val_string, len);
+					g_free(p2p_service_val_string);
+
+					WCALOG_DEBUG("P2p wifi display service %s size: %ld",
+							g_variant_print (p2p_service_val, TRUE), len);
+					InformationElementArray* widiInfoElemArray =
+							(InformationElementArray*) malloc(sizeof(InformationElementArray));
+					widiInfoElemArray->bytes = (uint8_t*) malloc(sizeof(uint8_t)*len);
+					widiInfoElemArray->length = len;
+					memcpy (widiInfoElemArray->bytes, g_variant_get_data(p2p_service_val), len);
+
+					p2p_parse_wfd_dev_info(widiInfoElemArray->bytes,
+							widiInfoElemArray->length, &service->peer);
+
+					free (widiInfoElemArray->bytes);
+					free (widiInfoElemArray);
+					g_variant_unref(p2p_service_val);
+				}
+
+				g_variant_unref(p2p_service_val_v);
+				g_variant_unref(p2p_service_key_v);
+				g_variant_unref(service_property);
+			}
+			g_variant_unref(service_array);
+			g_variant_unref(service_struct);
 		}
 		else if (!g_strcmp0(key, "Address"))
 		{
@@ -1711,7 +1988,7 @@ gboolean connman_service_is_online(connman_service_t *service)
  * Create a new connman service instance and set its properties  (see header for API details)
  */
 
-connman_service_t *connman_service_new(GVariant *variant)
+connman_service_t *connman_service_new(GVariant *variant, gboolean p2p)
 {
 	if (NULL == variant)
 	{
@@ -1725,19 +2002,33 @@ connman_service_t *connman_service_new(GVariant *variant)
 		return NULL;
 	}
 
+	GError *error = NULL;
 	GVariant *service_v = g_variant_get_child_value(variant, 0);
 	service->path = g_variant_dup_string(service_v, NULL);
-	service->identifier = strip_prefix(service->path, "/net/connman/service/");
 
-	GError *error = NULL;
+	if(p2p)
+	{
+		service->identifier = strip_prefix(service->path, "/net/connman/peer/");
+		service->remote = (ConnmanInterfaceService *)connman_interface_peer_proxy_new_for_bus_sync(
+                                      G_BUS_TYPE_SYSTEM,
+                                      G_DBUS_PROXY_FLAGS_NONE,
+                                      "net.connman",
+                                      service->path,
+                                      NULL,
+                                      &error);
 
-	service->remote = connman_interface_service_proxy_new_for_bus_sync(
-	                      G_BUS_TYPE_SYSTEM,
-	                      G_DBUS_PROXY_FLAGS_NONE,
-	                      "net.connman",
-	                      service->path,
-	                      NULL,
-	                      &error);
+	}
+	else
+	{
+		service->identifier = strip_prefix(service->path, "/net/connman/service/");
+		service->remote = connman_interface_service_proxy_new_for_bus_sync(
+	                              G_BUS_TYPE_SYSTEM,
+	                              G_DBUS_PROXY_FLAGS_NONE,
+	                              "net.connman",
+	                              service->path,
+	                              NULL,
+	                              &error);
+	}
 
 	g_variant_unref(service_v);
 
@@ -1751,7 +2042,9 @@ connman_service_t *connman_service_new(GVariant *variant)
 	}
 
 	g_dbus_proxy_set_default_timeout(service->remote, DBUS_CALL_TIMEOUT);
+	g_dbus_proxy_set_default_timeout((GDBusProxy *)service->remote, DBUS_CALL_TIMEOUT);
 	service->iprule_added = false;
+
 	service->sighandler_id = g_signal_connect_data(G_OBJECT(service->remote),
 	                         "property-changed",
 	                         G_CALLBACK(property_changed_cb), service, NULL, 0);
@@ -1765,7 +2058,6 @@ connman_service_t *connman_service_new(GVariant *variant)
 
 	return service;
 }
-
 
 /**
  * Free the connman service instance  (see header for API details)
@@ -1838,6 +2130,7 @@ void connman_service_free(gpointer data, gpointer user_data)
 
 	g_free(service->peer.address);
 	g_free(service->peer.service_discovery_response);
+	service->peer.service_discovery_response = NULL;
 
 	if (service->bss)
 	{
@@ -1862,5 +2155,6 @@ void connman_service_free(gpointer data, gpointer user_data)
 	service->remote = NULL;
 
 	g_free(service);
+	service=NULL;
 }
 

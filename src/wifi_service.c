@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ errorText | Yes | String | Error description
 #include "common.h"
 #include "connectionmanager_service.h"
 #include "logging.h"
+#include "wifi_p2p_service.h"
 #include "wifi_tethering_service.h"
 #include "errors.h"
 
@@ -1827,6 +1828,21 @@ static void manager_services_changed_callback(gpointer data,
 		mark_all_wifi_services_as_unchanged();
 	}
 
+	if (service_type & P2P_SERVICES_CHANGED)
+	{
+		GSList *listnode;
+                if(manager)
+                {
+			for (listnode = manager->p2p_services; listnode ; listnode = listnode->next)
+			{
+				connman_service_t *service = (connman_service_t *)(listnode->data);
+				setPropertyUpdateCallback(service);
+			}
+                }
+		connectionmanager_send_status_to_subscribers();
+		send_peer_information_to_subscribers();
+	}
+
 	if (service_type & ETHERNET_SERVICES_CHANGED)
 	{
 		connectionmanager_send_status_to_subscribers();
@@ -2071,6 +2087,28 @@ static void check_and_initialize_ethernet_technology(void)
 	}
 }
 
+static void check_and_initialize_p2p_technology(void)
+{
+
+	connman_technology_t *technology = connman_manager_find_p2p_technology(
+	                                       manager);
+
+	if (technology)
+	{
+		connman_technology_register_property_changed_cb(technology,
+		        technology_property_changed_callback);
+
+		if (technology->powered)
+		{
+			//send_p2p_get_state_to_subscribers();
+			//initialize_wfds();
+		}
+
+	}
+
+}
+
+
 static void check_and_initialize_wifi_technology(void)
 {
 	connman_technology_t *technology = connman_manager_find_wifi_technology(
@@ -2083,6 +2121,8 @@ static void check_and_initialize_wifi_technology(void)
 	{
 		connman_technology_register_property_changed_cb(technology,
 		        technology_property_changed_callback);
+
+		update_p2p_device_name();
 
 		if (technology->powered)
 		{
@@ -2106,6 +2146,7 @@ static void check_and_initialize_wifi_technology(void)
 static void manager_technologies_changed_callback(gpointer data)
 {
 	check_and_initialize_wifi_technology();
+	check_and_initialize_p2p_technology();
 	check_and_initialize_ethernet_technology();
 }
 
@@ -3889,6 +3930,9 @@ static void connman_service_stopped(GDBusConnection *conn, const gchar *name,
 	}
 }
 
+extern void manager_groups_changed_callback(gpointer data,
+        gboolean group_added);
+
 static void connman_service_started(GDBusConnection *conn, const gchar *name,
                                     const gchar *name_owner, gpointer user_data)
 {
@@ -3934,8 +3978,11 @@ static void connman_service_started(GDBusConnection *conn, const gchar *name,
 	        manager_services_changed_callback);
 	connman_manager_register_technologies_changed_cb(manager,
 	        manager_technologies_changed_callback);
+	connman_manager_register_groups_changed_cb(manager,
+	                                           manager_groups_changed_callback);
 
 	check_and_initialize_wifi_technology();
+	check_and_initialize_p2p_technology();
 	check_and_initialize_ethernet_technology();
 
 	connectionmanager_send_status_to_subscribers();
@@ -4038,6 +4085,7 @@ int initialize_wifi_ls2_calls(GMainLoop *mainloop , LSHandle **wifi_handle)
 
 	init_wifi_profile_list();
 
+	initialize_wifi_p2p_ls2_calls(mainloop, pLsHandle);
 	initialize_wifi_tethering_ls2_calls(mainloop, pLsHandle);
 
 	*wifi_handle = pLsHandle;
