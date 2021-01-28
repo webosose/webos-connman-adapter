@@ -84,6 +84,8 @@ gboolean p2p_connected = FALSE;
 guint block_getstatus_response = 0;
 gboolean wifi_tethering = FALSE;
 gboolean wired_plugged = FALSE;
+guint available_lan_interface = 0;
+
 
 char getinfo_cur_wifi_mac_address[MAC_ADDR_STRING_LEN]={0};
 char getinfo_cur_wired_mac_address[MAC_ADDR_STRING_LEN]={0};
@@ -418,15 +420,12 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	jobject_put(*reply, J_CSTR_TO_JVAL("offlineMode"),
 	            jstring_create(offlineMode ? "enabled" : "disabled"));
 
-	jvalue_ref connected_wired_status = jobject_create();
-	jvalue_ref disconnected_wired_status = jobject_create();
+	jvalue_ref wired_interfaces = jobject_create();
 	jvalue_ref connected_wifi_status = jobject_create();
 	jvalue_ref disconnected_wifi_status = jobject_create();
 	jvalue_ref connected_p2p_status = jobject_create();
 	jvalue_ref disconnected_p2p_status = jobject_create();
 
-	jobject_put(disconnected_wired_status, J_CSTR_TO_JVAL("state"),
-	            jstring_create("disconnected"));
 	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("state"),
 	            jstring_create("disconnected"));
 	jobject_put(disconnected_wifi_status, J_CSTR_TO_JVAL("tetheringEnabled"),
@@ -435,24 +434,62 @@ static void append_connection_status(jvalue_ref *reply, bool subscribed)
 	            jstring_create("disconnected"));
 
 	/* get the service which is currently connecting or already in connected */
+	GSList *iter;
+	connman_technology_t *technology = NULL;
+	for (iter = manager->technologies ; NULL != iter; iter = iter->next)
+	{
+		technology = (struct connman_technology *)(iter->data);
+		if (!g_strcmp0(technology->type, "ethernet"))
+		{
+			int n = 0;
+			jvalue_ref interface_obj = jarray_create(NULL);
+			for (n = 0; n < g_strv_length(technology->interfaces); n++)
+			{
+				gboolean isPlugged = false;
+				connman_service_t *connected_wired_service =
+					connman_manager_get_connected_service_by_interfaceName(manager->wired_services,technology->interfaces[n],&isPlugged);
+				jvalue_ref wired_info = jobject_create();
+				if (NULL != connected_wired_service)
+				{
+					update_connection_status(connected_wired_service, &wired_info);
+					int connman_state = 0;
+					connman_state = connman_service_get_state(connected_wired_service->state);
+					if(connman_state == CONNMAN_SERVICE_STATE_ONLINE)
+					{
+						jobject_put(wired_info, J_CSTR_TO_JVAL("default"), jboolean_create(true));
+					}
+					jobject_put(wired_info, J_CSTR_TO_JVAL("plugged"),jboolean_create(true));
+				}
+				else
+				{
+					jobject_put(wired_info, J_CSTR_TO_JVAL("interfaceName"),jstring_create(technology->interfaces[n]));
+					jobject_put(wired_info, J_CSTR_TO_JVAL("plugged"),jboolean_create(isPlugged));
+					jobject_put(wired_info, J_CSTR_TO_JVAL("state"), jstring_create("disconnected"));
+				}
+				jarray_append(interface_obj, wired_info);
+			}
+			jobject_put(wired_interfaces, J_CSTR_TO_JVAL("interface"), interface_obj);
+			break;
+		}
+	}
+
 	connman_service_t *connected_wired_service =
-	    connman_manager_get_connected_service(manager->wired_services);
+	    connman_manager_get_default_service(manager->wired_services);
 
 	if (NULL != connected_wired_service)
 	{
-		update_connection_status(connected_wired_service, &connected_wired_status);
-		jobject_put(connected_wired_status, J_CSTR_TO_JVAL("plugged"),
+		update_connection_status(connected_wired_service, &wired_interfaces);
+		jobject_put(wired_interfaces, J_CSTR_TO_JVAL("plugged"),
 		            jboolean_create(true));
-		jobject_put(*reply, J_CSTR_TO_JVAL("wired"), connected_wired_status);
-		j_release(&disconnected_wired_status);
 	}
 	else
 	{
-		jobject_put(disconnected_wired_status, J_CSTR_TO_JVAL("plugged"),
+		jobject_put(wired_interfaces, J_CSTR_TO_JVAL("plugged"),
 		            jboolean_create(wired_plugged ? true : false));
-		jobject_put(*reply, J_CSTR_TO_JVAL("wired"), disconnected_wired_status);
-		j_release(&connected_wired_status);
+		jobject_put(wired_interfaces, J_CSTR_TO_JVAL("state"), jstring_create("disconnected"));
 	}
+
+	jobject_put(*reply, J_CSTR_TO_JVAL("wired"), wired_interfaces);
 
 	connman_service_t *connected_wifi_service = NULL;
 
@@ -624,7 +661,8 @@ static gboolean check_update_is_needed(void)
 
 void connectionmanager_send_status_to_subscribers(void)
 {
-	bool wired_skip, wifi_skip = false;
+	bool wired_skip, wifi_skip ,update_required = false;
+	guint connected_ethernet_interfaces = 0;
 
 	if (manager == NULL)
 		return;
@@ -667,8 +705,34 @@ void connectionmanager_send_status_to_subscribers(void)
 			}
 		}
 
+		GSList *iter;
+		connman_technology_t *technology = NULL;
+		for (iter = manager->technologies ; NULL != iter; iter = iter->next)
+		{
+			technology = (struct connman_technology *)(iter->data);
+			if (!g_strcmp0(technology->type, "ethernet"))
+			{
+				for (int n = 0; n < g_strv_length(technology->interfaces); n++)
+				{
+					connman_service_t *service = connman_manager_retreive_service_by_interfaceName(manager->wired_services,technology->interfaces[n]);
+					if ((NULL != service) && (connman_service_is_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS)))
+					{
+						connman_service_unset_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS);
+						update_required = true;
+					}
+				}
+				connected_ethernet_interfaces =  g_strv_length(technology->interfaces);
+				break;
+			}
+		}
+
+
+		if((available_lan_interface != connected_ethernet_interfaces)|| (update_required))
+		{
+			available_lan_interface = connected_ethernet_interfaces;
+		}
 		// This routine affects when connected service for both wired and wifi exists.
-		if (connected_wired_service && connected_wifi_service)
+		else if (connected_wired_service && connected_wifi_service)
 		{
 			/* If there is no change of online_checking status for both wired and wifi,
 			 * getstatus will not be emitted. If there is a change of online_checking status
@@ -698,7 +762,6 @@ void connectionmanager_send_status_to_subscribers(void)
 
 	jschema_ref response_schema = jschema_parse(j_cstr_to_buffer("{}"),
 	                              DOMOPT_NOOPT, NULL);
-
 	if (response_schema)
 	{
 		const char *payload = jvalue_tostring(reply, response_schema);
@@ -1654,12 +1717,35 @@ static void getinfo_add_response(jvalue_ref* reply, bool subscribed)
 
 	if (getinfo_cur_wired_mac_address[0])
 	{
+		GSList *iter;
+		connman_technology_t *technology = NULL;
+		jvalue_ref interface_obj = jarray_create(NULL);
+		for (iter = manager->technologies ; NULL != iter; iter = iter->next)
+		{
+			technology = (struct connman_technology *)(iter->data);
+			if (!g_strcmp0(technology->type, "ethernet"))
+			{
+				int n = 0;
+				for (n = 0; n < g_strv_length(technology->interfaces); n++)
+				{
+					char wired_mac_address[MAC_ADDR_STRING_LEN]={0};
+					if (retrieve_mac_address(technology->interfaces[n], wired_mac_address, MAC_ADDR_STRING_LEN) == 0)
+					{
+						jvalue_ref wired_info = jobject_create();
+						jobject_put(wired_info, J_CSTR_TO_JVAL("name"), jstring_create(technology->interfaces[n]));
+						jobject_put(wired_info, J_CSTR_TO_JVAL("macAddress"), jstring_create(wired_mac_address));
+						jarray_append(interface_obj, wired_info);
+					}
+				}
+				break;
+			}
+		}
 		jvalue_ref wired_info = jobject_create();
-		jobject_put(wired_info,
-		            J_CSTR_TO_JVAL("macAddress"),
-		            jstring_create(getinfo_cur_wired_mac_address));
+		jobject_put(wired_info, J_CSTR_TO_JVAL("macAddress"), jstring_create(getinfo_cur_wired_mac_address));
+		jobject_put(wired_info, J_CSTR_TO_JVAL("interface"), interface_obj);
 		jobject_put(*reply, J_CSTR_TO_JVAL("wiredInfo"), wired_info);
 	}
+
 }
 
 void send_getinfo_to_subscribers(void)
@@ -1949,7 +2035,6 @@ static void technology_property_changed_callback(gpointer data,
         const gchar *property, GVariant *value)
 {
 	connman_technology_t *technology = (connman_technology_t *)data;
-
 	if (NULL == technology)
 	{
 		return;
@@ -1957,7 +2042,6 @@ static void technology_property_changed_callback(gpointer data,
 
 	/* Need to send getstatus method to all com.webos.service.connectionmanager subscribers whenever the
 	   "powered" or "connected" state of the technology changes */
-
 	if (!g_strcmp0(property, "Powered") || !g_strcmp0(property, "Connected"))
 	{
 		if (manager) {
@@ -1966,6 +2050,11 @@ static void technology_property_changed_callback(gpointer data,
 				connman_service_set_run_online_check(connected_wifi_service, TRUE);
 		}
 		connectionmanager_send_status_to_subscribers();
+	}
+	else if (!g_strcmp0(property, "Interfaces"))
+	{
+		connectionmanager_send_status_to_subscribers();
+		send_getinfo_to_subscribers();
 	}
 }
 
@@ -2587,6 +2676,74 @@ cleanup:
 	return true;
 }
 
+static bool handle_set_default_interface(LSHandle *sh, LSMessage *message,
+                                    void *context)
+{
+	if (!connman_status_check(manager, sh, message))
+	{
+		return true;
+	}
+
+	connman_service_t *service = NULL;
+	gchar *interfaceName = NULL;
+
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(ifName, string)) REQUIRED_1(ifName))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref interfaceObj = {0};
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ifName"), &interfaceObj))
+	{
+		raw_buffer interface_buf = jstring_get(interfaceObj);
+		interfaceName = g_strdup(interface_buf.m_str);
+		jstring_free_buffer(interface_buf);
+	}
+
+	service = connman_manager_retreive_service_by_interfaceName(manager->wired_services ,interfaceName);
+
+	if (NULL != service)
+	{
+		int service_state = connman_service_get_state(service->state);
+
+		if(service_state == CONNMAN_SERVICE_STATE_ONLINE)
+		{
+			LSMessageReplyCustomError(sh, message, "Already default",
+									WCA_API_ERROR_INTERFACE_ALREADY_DEFAULT);
+		}
+		else if(service_state == CONNMAN_SERVICE_STATE_READY
+			|| service_state == CONNMAN_SERVICE_STATE_CONFIGURATION)
+		{
+			if (connman_service_set_default(service))
+			{
+				LSMessageReplySuccess(sh, message);
+			}
+			else
+			{
+				LSMessageReplyErrorUnknown(sh, message);
+			}
+		}
+		else
+		{
+			LSMessageReplyCustomError(sh, message, "Invalid Interface",
+										WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+		}
+	}
+	else
+	{
+		LSMessageReplyCustomError(sh, message, "Invalid Interface",
+									WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+	}
+
+	g_free(interfaceName);
+	j_release(&parsedObj);
+	return true;
+}
+
 /**
  * @brief com.webos.service.connectionmanager service method table
  */
@@ -2604,6 +2761,7 @@ static LSMethod connectionmanager_methods[] =
 	{ LUNA_METHOD_SETTECHNOLOGYSTATE,   handle_set_technology_state_command },
 	{ LUNA_METHOD_SETPROXY,             handle_set_proxy_command },
 	{ LUNA_METHOD_FINDPROXYFORURL,      handle_find_proxy_for_url_command },
+	{ LUNA_METHOD_SETDEFAULT,           handle_set_default_interface },
 	{ },
 };
 

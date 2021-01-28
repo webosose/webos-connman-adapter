@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,5 +46,7 @@ char *convert_ssid_to_utf8(const gchar *ssid, gsize ssid_len,
 char *strip_prefix(const char *str, const char *prefix);
 
 bool is_valid_wifi_passphrase(const char* passphrase, const char* security);
+
+bool is_vlan(const char* string);
 
 #endif

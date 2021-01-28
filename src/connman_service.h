@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ typedef struct ipv4info
 	gchar *address;
 	gchar *netmask;
 	gchar *gateway;
+	gint prefix_len;
 } ipv4info_t;
 
 /**
@@ -122,10 +123,12 @@ typedef struct connman_service
 	gchar *path;
 	gchar *identifier;
 	gchar *name; /* Service name, can be null for hidden wifi networks */
+	gchar *interface_name; /* Interface name */
 	gchar *display_name; /* Service display name, can be null for hidden wifi networks */
 	gchar *state;
 	gchar *error;
 	gchar *address;
+	gchar *mac_address;
 
 	guchar strength;
 	GStrv security;
@@ -164,6 +167,7 @@ typedef struct connman_service
 	gchar *ssid; /* Wifi service ssid, can be null for hidden networks */
 	gsize ssid_len;
 	GCancellable *cancellable;
+	gboolean iprule_added;
 } connman_service_t;
 
 /**
@@ -279,6 +283,15 @@ extern gboolean connman_service_disconnect(connman_service_t *service);
  * @return FALSE if the disconnect call failed, TRUE otherwise
  */
 extern gboolean connman_service_reject_peer(connman_service_t *service);
+
+/**
+ * Set this service as default , this will make this service state online
+ *
+ * @param[IN]  service A service instance
+ *
+ * @return FALSE if the call failed, TRUE otherwise
+ */
+extern gboolean connman_service_set_default(connman_service_t *service);
 
 /**
  * remove a remote connman service

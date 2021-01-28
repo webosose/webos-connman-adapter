@@ -164,6 +164,14 @@ extern connman_service_t *connman_manager_get_connected_service(
     GSList *service_list);
 
 /**
+* Go through the manager's given services list and get the one which is in 
+* "online" state , if none of the service is in online state then it returns
+* first available service which is in "ready" state 
+*/
+extern connman_service_t *connman_manager_get_default_service(
+    GSList *service_list);
+
+/**
  * Go through the manager's given service list and find the currently connecting service
  * and return it.
  *
@@ -173,6 +181,29 @@ extern connman_service_t *connman_manager_get_connected_service(
  */
 extern connman_service_t *connman_manager_get_connecting_service(
     GSList *service_list);
+
+/**
+ * Go through the manager's given services list and get the one by interface name which is in
+ * "ready" or "online" state (see header for API details) and updates plugged state of the
+ * ethernet cable
+ *
+ * @param[IN] service_list Manager's service list (wired of wifi)
+ * @param[IN] interface name of the interface which needs to be searched in the list
+ * @param[OUT] plugged status to be updated for ethernet cable
+ */
+
+extern connman_service_t *connman_manager_get_connected_service_by_interfaceName(
+    GSList *service_list, const char *interface, gboolean* plugged);
+
+/**
+ * Go through the manager's given services list and get the one by interface name
+ *
+ * @param[IN] service_list Manager's service list (wired of wifi)
+ * @param[IN] interface name of the interface which needs to be searched in the list
+ */
+
+extern connman_service_t *connman_manager_retreive_service_by_interfaceName(
+   GSList *service_list, const char *interface);
 
 /**
  * Register for manager's "properties_changed" signal, calling the provided function whenever the callback function

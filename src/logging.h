@@ -110,6 +110,7 @@ extern PmLogContext gLogContext;
 /** connman_service.c */
 #define MSGID_SERVICE_CONNECT_ERROR                     "SRVC_CONNECT_ERR"
 #define MSGID_SERVICE_DISCONNECT_ERROR                  "SRVC_DISCONNECT_ERR"
+#define MSGID_SERVICE_SET_DEFAULT_ERROR                 "SRVC_SET_DEFAULT_ERR"
 #define MSGID_SERVICE_REMOVE_ERROR                      "SRVC_REMOVE_ERR"
 #define MSGID_SERVICE_SET_IPV4_ERROR                    "SRVC_SET_IPV4_ERR"
 #define MSGID_SERVICE_SET_IPV6_ERROR                    "SRVC_SET_IPV6_ERR"

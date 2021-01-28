@@ -12,7 +12,8 @@
         "com.webos.service.connectionmanager/setProxy",
         "com.webos.service.connectionmanager/setstate",
         "com.webos.service.connectionmanager/setTechnologyState",
-        "com.webos.service.connectionmanager/monitorActivity"
+        "com.webos.service.connectionmanager/monitorActivity",
+        "com.webos.service.connectionmanager/setDefaultInterface"
     ],
     "wifi.query": [
         "com.webos.service.wifi/findnetworks",

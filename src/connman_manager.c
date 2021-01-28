@@ -200,7 +200,7 @@ static gboolean service_on_configured_iface(GVariant *service_v)
 					g_variant_unref(ifaceva);
 
 					if (!g_strcmp0(iface, CONNMAN_WIFI_INTERFACE_NAME) ||
-					        !g_strcmp0(iface, CONNMAN_WIRED_INTERFACE_NAME))
+					        g_str_has_prefix (iface, "eth"))
 					{
 						return TRUE;
 					}
@@ -1299,6 +1299,130 @@ connman_service_t *connman_manager_get_connected_service(GSList *service_list)
 		{
 			connman_service_update_properties(connected_service, properties);
 			g_variant_unref(properties);
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * Go through the manager's given services list and get the one which is in
+ * "online" state , if none of the service is in online state then it returns 
+ * first available service which is in "ready" state
+ */
+connman_service_t *connman_manager_get_default_service(GSList *service_list)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		int service_state = connman_service_get_state(service->state);
+
+		if(service_state == CONNMAN_SERVICE_STATE_ONLINE)
+		{
+			connected_service = service;
+			break;
+		}
+		else if((connected_service == NULL) && ( service_state == CONNMAN_SERVICE_STATE_READY || 
+			service_state == CONNMAN_SERVICE_STATE_CONFIGURATION))
+		{
+			connected_service = service;
+		}
+	}
+
+	if (connected_service != NULL)
+	{
+		GVariant *properties = connman_service_fetch_properties(connected_service);
+
+		if (NULL != properties)
+		{
+			connman_service_update_properties(connected_service, properties);
+			g_variant_unref(properties);
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * Go through the manager's given services list and get the one by interface name which is in
+ * "ready" or "online" state (see header for API details) and updates plugged state of the
+ * ethernet cable
+ */
+
+connman_service_t *connman_manager_get_connected_service_by_interfaceName(GSList *service_list, const char *interface , gboolean* plugged)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		if(!g_strcmp0(interface, service->interface_name))
+		{
+			plugged = true;
+			int service_state = connman_service_get_state(service->state);
+
+			if(service_state == CONNMAN_SERVICE_STATE_ONLINE
+				|| service_state == CONNMAN_SERVICE_STATE_READY
+				|| service_state == CONNMAN_SERVICE_STATE_CONFIGURATION)
+			{
+				connected_service = service;
+				break;
+			}
+		}
+	}
+
+	if (connected_service != NULL)
+	{
+		GVariant *properties = connman_service_fetch_properties(connected_service);
+
+		if (NULL != properties)
+		{
+			connman_service_update_properties(connected_service, properties);
+			g_variant_unref(properties);
+			return connected_service;
+		}
+	}
+
+	return NULL;
+}
+
+
+/**
+ * Go through the manager's given services list and get the one by interface name
+ */
+
+connman_service_t *connman_manager_retreive_service_by_interfaceName(GSList *service_list, const char *interface)
+{
+	if (NULL == service_list)
+	{
+		return NULL;
+	}
+
+	GSList *iter;
+	connman_service_t *service = NULL, *connected_service = NULL;
+
+	for (iter = service_list; NULL != iter; iter = iter->next)
+	{
+		service = (struct connman_service *)(iter->data);
+		if(!g_strcmp0(interface, service->interface_name))
+		{
+			connected_service = service;
 			return connected_service;
 		}
 	}

@@ -45,6 +45,8 @@
 #define LUNA_METHOD_SETTECHNOLOGYSTATE    "setTechnologyState"
 #define LUNA_METHOD_SETPROXY              "setProxy"
 #define LUNA_METHOD_FINDPROXYFORURL       "findProxyForURL"
+#define LUNA_METHOD_SETDEFAULT            "setDefaultInterface"
+
 
 enum ipadress_type
 {
