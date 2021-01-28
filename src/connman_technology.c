@@ -632,6 +632,11 @@ static void set_property_value(connman_technology_t *technology,
 		g_free(technology->name);
 		technology->name = g_variant_dup_string(val, NULL);
 	}
+	else if (!g_strcmp0(key, "Interfaces"))
+	{
+		g_strfreev(technology->interfaces);
+		technology->interfaces = g_variant_dup_strv(val, NULL);
+	}
 	else if (!g_strcmp0(key, "Powered"))
 	{
 		technology->powered = g_variant_get_boolean(val);
@@ -1065,6 +1070,9 @@ void connman_technology_free(connman_technology_t *technology)
 	technology->remote = NULL;
 
 	g_strfreev(technology->station_mac);
+
+	g_strfreev(technology->interfaces);
+	technology->interfaces = NULL;
 
 	g_free(technology);
 }

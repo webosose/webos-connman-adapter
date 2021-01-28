@@ -1654,12 +1654,35 @@ static void getinfo_add_response(jvalue_ref* reply, bool subscribed)
 
 	if (getinfo_cur_wired_mac_address[0])
 	{
+		GSList *iter;
+		connman_technology_t *technology = NULL;
+		jvalue_ref interface_obj = jarray_create(NULL);
+		for (iter = manager->technologies ; NULL != iter; iter = iter->next)
+		{
+			technology = (struct connman_technology *)(iter->data);
+			if (!g_strcmp0(technology->type, "ethernet"))
+			{
+				int n = 0;
+				for (n = 0; n < g_strv_length(technology->interfaces); n++)
+				{
+					char wired_mac_address[MAC_ADDR_STRING_LEN]={0};
+					if (retrieve_mac_address(technology->interfaces[n], wired_mac_address, MAC_ADDR_STRING_LEN) == 0)
+					{
+						jvalue_ref wired_info = jobject_create();
+						jobject_put(wired_info, J_CSTR_TO_JVAL("name"), jstring_create(technology->interfaces[n]));
+						jobject_put(wired_info, J_CSTR_TO_JVAL("macAddress"), jstring_create(wired_mac_address));
+						jarray_append(interface_obj, wired_info);
+					}
+				}
+				break;
+			}
+		}
 		jvalue_ref wired_info = jobject_create();
-		jobject_put(wired_info,
-		            J_CSTR_TO_JVAL("macAddress"),
-		            jstring_create(getinfo_cur_wired_mac_address));
+		jobject_put(wired_info, J_CSTR_TO_JVAL("macAddress"), jstring_create(getinfo_cur_wired_mac_address));
+		jobject_put(wired_info, J_CSTR_TO_JVAL("interface"), interface_obj);
 		jobject_put(*reply, J_CSTR_TO_JVAL("wiredInfo"), wired_info);
 	}
+
 }
 
 void send_getinfo_to_subscribers(void)
@@ -1966,6 +1989,10 @@ static void technology_property_changed_callback(gpointer data,
 				connman_service_set_run_online_check(connected_wifi_service, TRUE);
 		}
 		connectionmanager_send_status_to_subscribers();
+	}
+	else if (!g_strcmp0(property, "Interfaces"))
+	{
+		send_getinfo_to_subscribers();
 	}
 }
 

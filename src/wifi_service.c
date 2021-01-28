@@ -2038,6 +2038,10 @@ static void technology_property_changed_callback(gpointer data,
 		{
 			connectionmanager_send_status_to_subscribers();
 		}
+		else if (!g_strcmp0(property, "Interfaces"))
+		{
+			send_getinfo_to_subscribers();
+		}
 	}
 }
 
