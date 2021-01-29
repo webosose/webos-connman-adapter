@@ -2645,20 +2645,16 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 	}
 
 	if (!connman_status_check(manager, sh, message))
-	{
-		return true;
-	}
+		goto Exit;
 
 	if (!wifi_technology_status_check(sh, message))
-	{
-		return true;
-	}
+		goto Exit;
 
 	if (!is_wifi_powered())
 	{
 		LSMessageReplyCustomError(sh, message, "WiFi switched off",
 		                          WCA_API_ERROR_WIFI_SWITCHED_OFF);
-		return true;
+		goto Exit;
 	}
 
 	if (is_scan_option)
@@ -2667,7 +2663,7 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 		{
 			LSMessageReplyCustomError(sh, message, "Error in scanning network",
 												  WCA_API_ERROR_SCANNING);
-			return true;
+			goto Exit;
 		}
 	}
 	else
@@ -2676,14 +2672,16 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 		{
 			LSMessageReplyCustomError(sh, message, "Error in scanning network",
 									  WCA_API_ERROR_SCANNING);
-			return true;
+			goto Exit;
 		}
 	}
 
 	LSMessageReplySuccess(sh, message);
 
+Exit:
 	j_release(&parsedObj);
 	g_strfreev(ssid);
+	g_strfreev(frequency);
 	return true;
 }
 
@@ -3628,6 +3626,7 @@ static bool set_country_code(const char* countryCode)
 	fp = popen(command, "r");
 	if (NULL == fp)
 	{
+		g_free(command);
 		return false;
 	}
 
@@ -3730,6 +3729,7 @@ static bool get_country_code()
 	fp = popen(command, "r");
 	if (NULL == fp)
 	{
+		g_free(command);
 		return false;
 	}
 

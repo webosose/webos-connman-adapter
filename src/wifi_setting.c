@@ -759,6 +759,7 @@ gboolean change_network_passphrase(const char *ssid, const char *security,
 
 	if (keyfile == NULL)
 	{
+		g_free(pathname);
 		return FALSE;
 	}
 
@@ -798,6 +799,7 @@ gboolean change_network_ipv4(const char *ssid, const char *security,
 
 	if (keyfile == NULL)
 	{
+		g_free(pathname);
 		return FALSE;
 	}
 
@@ -840,6 +842,7 @@ gboolean change_network_ipv6(const char *ssid, const char *security,
 
 	if (keyfile == NULL)
 	{
+		g_free(pathname);
 		return FALSE;
 	}
 
@@ -880,6 +883,7 @@ gboolean change_network_dns(const char *ssid, const char *security,
 
 	if (keyfile == NULL)
 	{
+		g_free(pathname);
 		return FALSE;
 	}
 
@@ -932,6 +936,7 @@ gboolean change_network_remove_entry(const char *ssid, const char *security,
 
 	if (keyfile == NULL)
 	{
+		g_free(pathname);
 		return FALSE;
 	}
 
