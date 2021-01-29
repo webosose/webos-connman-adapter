@@ -90,9 +90,14 @@ static bool set_max_station_count(gint count)
 	if (count <= 0 || count > 254)
 		return false;
 
-	command	= g_strdup_printf("%s %d","wpa_cli -i wlan0 set max_num_sta" , count);
-	(void)system(command);
-	(void)system("wpa_cli -i wlan0 save_config");
+	command = g_strdup_printf("%s %d","wpa_cli -i wlan0 set max_num_sta" , count);
+
+	if(command != NULL)
+	{
+		(void)system(command);
+		(void)system("wpa_cli -i wlan0 save_config");
+		g_free(command);
+	}
 
 	return true;
 }

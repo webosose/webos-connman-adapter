@@ -479,7 +479,11 @@ gboolean wifi_scan_now_with_option(const GStrv *ssid, const GStrv *freq)
 	}
 
 	WCALOG_DEBUG("wifi_scan: Scanning wifi with %s", command);
-	(void)system(command);
+	if(command != NULL)
+	{
+		(void)system(command);
+		g_free(command);
+	}
 
 	return true;
 }
