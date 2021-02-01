@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ extern gboolean connman_status_check(connman_manager_t *manager, LSHandle *sh,
 extern gboolean is_wifi_powered(void);
 extern gboolean is_wifi_tethering(void);
 extern gboolean wifi_technology_status_check(LSHandle *sh, LSMessage *message);
+extern gboolean p2p_technology_status_check(LSHandle *sh, LSMessage *message);
 extern gboolean wifi_technology_status_check_with_subscription(LSHandle *sh,
+                                                        LSMessage *message, bool subscribed);
+extern gboolean p2p_technology_status_check_with_subscription(LSHandle *sh,
                                                         LSMessage *message, bool subscribed);
 extern gboolean connman_status_check_with_subscription(connman_manager_t *manager,
                                                 LSHandle *sh, LSMessage *message, bool subscribed);

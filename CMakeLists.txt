@@ -119,6 +119,7 @@ endif()
 include_directories(src ${GDBUS_IF_DIR})
 webos_configure_header_files(src)
 
+add_subdirectory(src/wfdsie)
 file(GLOB SOURCE_FILES
     src/common.c
     src/connectionmanager_service.c
@@ -134,6 +135,7 @@ file(GLOB SOURCE_FILES
     src/main.c
     src/pacrunner_client.c
     src/utils.c
+    src/wifi_p2p_service.c
     src/wifi_tethering_service.c
     src/wifi_profile.c
     src/wifi_service.c
@@ -154,7 +156,8 @@ target_link_libraries(webos-connman-adapter
                         ${PMLOG_LDFLAGS}
                         ${WCA_SUPPORT_LDFLAGS}
                         rt
-                        pthread)
+                        pthread
+                        wfdsie)
 
 webos_build_daemon()
 webos_build_system_bus_files()

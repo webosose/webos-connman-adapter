@@ -1,6 +1,6 @@
 <!-- LICENSE@@@
 
-Copyright (c) 2013 LG Electronics, Inc.
+Copyright (c) 2013-2021 LG Electronics, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -74,6 +74,13 @@ limitations under the License.
 		<method name="GetStaCount">
 			<arg type="i" direction="out"/>
 		</method>
+		<method name="RegisterPeerService">
+			<arg name="specification" type="a{sv}" direction="in"/>
+			<arg name="master" type="b" direction="in"/>
+		</method>
+		<method name="UnregisterPeerService">
+			<arg name="specification" type="a{sv}" direction="in"/>
+		</method>
 		<signal name="PropertyChanged">
 			<arg type="s"/>
 			<arg type="v"/>
@@ -86,6 +93,10 @@ limitations under the License.
 			<arg type="o"/>
 		</signal>
 		<signal name="ServicesChanged">
+			<arg type="a(oa{sv})"/>
+			<arg type="ao"/>
+		</signal>
+		<signal name="PeersChanged">
 			<arg type="a(oa{sv})"/>
 			<arg type="ao"/>
 		</signal>
@@ -147,9 +158,22 @@ limitations under the License.
 		</method>
 		<method name="Remove">
 		</method>
-		<method name="RejectPeer">
-		</method>
 		<method name="SetDefault">
+		</method>
+		<signal name="PropertyChanged">
+			<arg type="s"/>
+			<arg type="v"/>
+		</signal>
+	</interface>
+	<interface name="net.connman.Peer">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="Connect">
+		</method>
+		<method name="Disconnect">
+		</method>
+		<method name="RejectPeer">
 		</method>
 		<signal name="PropertyChanged">
 			<arg type="s"/>
@@ -163,11 +187,20 @@ limitations under the License.
 			<arg type="o" direction="in"/>
 			<arg type="s" direction="in"/>
 		</method>
+		<method name="ReportPeerError">
+			<arg type="o" direction="in"/>
+			<arg type="s" direction="in"/>
+		</method>
 		<method name="RequestBrowser">
 			<arg type="o" direction="in"/>
 			<arg type="s" direction="in"/>
 		</method>
 		<method name="RequestInput">
+			<arg type="o" direction="in"/>
+			<arg type="a{sv}" direction="in"/>
+			<arg type="a{sv}" direction="out"/>
+		</method>
+		<method name="RequestPeerAuthorization">
 			<arg type="o" direction="in"/>
 			<arg type="a{sv}" direction="in"/>
 			<arg type="a{sv}" direction="out"/>

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@
 #define WCA_API_ERROR_PIN_MISSING       15
 #define WCA_API_ERROR_OUT_OF_RANGE      16
 
+#define WCA_API_ERROR_P2P_TECH_UNAVAILABLE 17
 
 #define WCA_API_ERROR_INTERNAL          100
 #define WCA_API_ERROR_ALREADY_CONNECTING    101

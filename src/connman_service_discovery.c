@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019 LG Electronics, Inc.
+// Copyright (c) 2013-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@
 
 #include "connman_service_discovery.h"
 #include "connman_manager.h"
+#include "common.h"
 
 #include "logging.h"
+#include "wifi_p2p_service.h"
 
 static ConnmanInterfaceServiceDiscovery *sd = NULL;
 
@@ -59,8 +61,8 @@ discovery_response_cb(ConnmanInterfaceManager *proxy, const gchar *address,
 
 	GVariantIter *iter;
 	guchar byte;
-	g_variant_get(tlv, "ay", &iter);
-	gsize tlvstr_len = g_variant_n_children(tlv) * 3;
+	g_variant_get((GVariant *)tlv, "ay", &iter);
+	gsize tlvstr_len = g_variant_n_children((GVariant *)tlv) * 3;
 	tlvstr = g_new0(gchar, tlvstr_len);
 
 	while (g_variant_iter_loop(iter, "y", &byte))
@@ -78,6 +80,20 @@ discovery_response_cb(ConnmanInterfaceManager *proxy, const gchar *address,
 	}
 
 	g_variant_iter_free(iter);
+
+	for (listnode = manager->p2p_services; NULL != listnode ;
+	        listnode = listnode->next)
+	{
+		service = (connman_service_t *)(listnode->data);
+
+		if (!g_strcmp0(service->peer.address, address))
+		{
+			g_free(service->peer.service_discovery_response);
+			service->peer.service_discovery_response = g_strdup(tlvstr);
+			send_peer_information_to_subscribers();
+		}
+	}
+
 	g_free(tlvstr);
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ typedef struct connman_technology
 	gboolean wfd;
 	gboolean p2p_listen;
 	gboolean persistent_mode;
+	guint32 p2p_listen_channel;
 	gboolean wfd_sessionavail;
 	gboolean wfd_cpsupport;
 	gboolean legacy_scan;

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019 LG Electronics, Inc.
+// Copyright (c) 2013-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,13 @@
 #define ETHERNET_SERVICES_CHANGED   1
 #define WIFI_SERVICES_CHANGED       2
 #define P2P_SERVICES_CHANGED        4
+
+typedef enum
+{
+	CONNMAN_SERVICE_TYPE_P2P_UPNP = 0,
+	CONNMAN_SERVICE_TYPE_P2P_BONJOUR,
+	CONNMAN_SERVICE_TYPE_P2P_WiFiDisplayIEs
+} connman_p2p_service_type;
 
 /**
  * Callback function for handling any changes in connman services
@@ -153,6 +160,15 @@ extern connman_technology_t *connman_manager_find_ethernet_technology(
     connman_manager_t *manager);
 
 /**
+ * Go through the manager's technologies list and get the technology with type "p2p"
+ *
+ * @param[IN]  manager A manager instance
+ *
+ * @return Technology with type "p2p"
+ */
+extern connman_technology_t *connman_manager_find_p2p_technology(
+    connman_manager_t *manager);
+/**
  * Go through the manager's given services list and get the one which is in "ready" or
  * "online" state , i.e  one of the connected states.
  *
@@ -161,6 +177,8 @@ extern connman_technology_t *connman_manager_find_ethernet_technology(
  * @return Service which is in one of the connected states
  */
 extern connman_service_t *connman_manager_get_connected_service(
+    GSList *service_list);
+extern connman_service_t *connman_manager_get_p2p_connected_service(
     GSList *service_list);
 
 /**
@@ -308,6 +326,15 @@ extern gboolean connman_manager_populate_group_peers(connman_manager_t *manager,
 extern void connman_manager_register_groups_changed_cb(connman_manager_t
         *manager, connman_groups_changed_cb func);
 
+extern gboolean connman_manager_p2p_service_register(connman_manager_t
+        *manager, const connman_p2p_service_type type,
+        const gchar *description, const gchar *query,
+        const gchar *response, const void* infoelemarray, bool is_master);
+
+extern gboolean connman_manager_p2p_service_unregister(connman_manager_t
+        *manager, const connman_p2p_service_type type,
+        const gchar *description, const gchar *query, const void* infoelemarray);
+
 /**
  * Register for manager's "TechnologyAdded" and "TechnologyRemoved" siganls, calling the provided function whenever the callback function
  * for any of those signals is called
@@ -356,5 +383,6 @@ extern void connman_manager_free(connman_manager_t *manager);
 extern void set_wca_support_connman_update_callbacks(
     wca_support_connman_update_callbacks *callbacks);
 
+extern guint connman_manager_get_p2p_connected_service_count(GSList *service_list);
 #endif /* CONNMAN_MANAGER_H_ */
 

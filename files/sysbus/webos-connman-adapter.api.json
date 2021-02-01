@@ -24,7 +24,14 @@
         "com.webos.service.wifi/getstatus",
         "com.webos.service.wifi/tethering/getMaxStationCount",
         "com.webos.service.wifi/tethering/getState",
-        "com.webos.service.wifi/tethering/getStationCount"
+        "com.webos.service.wifi/tethering/getStationCount",
+        "com.webos.service.wifi/p2p/getdevicename",
+        "com.webos.service.wifi/p2p/getstate",
+        "com.webos.service.wifi/p2p/getgrouppeers",
+        "com.webos.service.wifi/p2p/getgroups",
+        "com.webos.service.wifi/p2p/getp2prequests",
+        "com.webos.service.wifi/p2p/getpeers",
+        "com.webos.service.wifi/p2p/getwifidisplayinfo"
     ],
     "wifi.management": [
         "com.webos.service.wifi/scan",
@@ -38,6 +45,25 @@
         "com.webos.service.wifi/startwps",
         "com.webos.service.wifi/setCountryCode",
         "com.webos.service.wifi/tethering/setState",
-        "com.webos.service.wifi/tethering/setMaxStationCount"
+        "com.webos.service.wifi/tethering/setMaxStationCount",
+        "com.webos.service.wifi/p2p/addservice",
+        "com.webos.service.wifi/p2p/cancel",
+        "com.webos.service.wifi/p2p/connect",
+        "com.webos.service.wifi/p2p/creategroup",
+        "com.webos.service.wifi/p2p/deleteprofile",
+        "com.webos.service.wifi/p2p/deleteservice",
+        "com.webos.service.wifi/p2p/disconnect",
+        "com.webos.service.wifi/p2p/disconnectgroup",
+        "com.webos.service.wifi/p2p/findservice",
+        "com.webos.service.wifi/p2p/invite",
+        "com.webos.service.wifi/p2p/rejectpeer",
+        "com.webos.service.wifi/p2p/setdevicename",
+        "com.webos.service.wifi/p2p/setgointent",
+        "com.webos.service.wifi/p2p/setlistenchannel",
+        "com.webos.service.wifi/p2p/setlistenparams",
+        "com.webos.service.wifi/p2p/setstate",
+        "com.webos.service.wifi/p2p/settethering",
+        "com.webos.service.wifi/p2p/setwifidisplayinfo"
+
     ]
 }
