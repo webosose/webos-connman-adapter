@@ -1181,7 +1181,7 @@ static void connman_service_advance_state(connman_service_t *service,
 			connman_service_get_ipinfo(service);
 			connman_service_create_ip_rule(service);
 		}
-		else if((!g_strcmp0(new_state, "online")) && (service->type == CONNMAN_SERVICE_TYPE_ETHERNET))
+		else if (service->type == CONNMAN_SERVICE_TYPE_ETHERNET)
 		{
 			connman_service_delete_ip_rule(service);
 		}
