@@ -2509,7 +2509,7 @@ static bool handle_get_device_name_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	if (!wifi_technology_status_check(sh, message))
+	if (!p2p_technology_status_check(sh, message))
 	{
 		return true;
 	}
