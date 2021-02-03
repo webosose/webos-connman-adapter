@@ -998,7 +998,7 @@ cleanup:
  * @return Connman service object or NULL in case of a failure.
  */
 
-static connman_service_t *retrieve_service_by_ssid(gchar *ssid)
+static connman_service_t *retrieve_service_by_ssid(gchar *ssid, gchar *interface_name)
 {
 	if (NULL != ssid)
 	{
@@ -1019,6 +1019,28 @@ static connman_service_t *retrieve_service_by_ssid(gchar *ssid)
 	{
 		/* Return the first wired service (there will be just one on most systems) */
 		GSList *ap = manager->wired_services;
+
+		if (interface_name)
+		{
+			/* Look up for the Wired service with the given interface_name */
+			for (; ap; ap = ap->next)
+			{
+				connman_service_t *service = (connman_service_t *)(ap->data);
+				if (!g_strcmp0(service->interface_name, interface_name))
+				{
+					return service;
+				}
+			}
+			return NULL;
+		}
+		else
+		{
+			connman_service_t *service = connman_manager_get_default_service(manager->wired_services);
+			if(service != NULL)
+			{
+				return service;
+			}
+		}
 
 		if (ap != NULL)
 		{
@@ -1077,18 +1099,19 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
 	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_5(PROP(method, string), PROP(address,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_6(PROP(method, string), PROP(address,
 	                                     string),
 	                                     PROP(netmask, string), PROP(gateway, string), PROP(ssid,
-	                                             string)) REQUIRED_1(method))), &parsedObj))
+	                                             string),PROP(interfaceName, string)) REQUIRED_1(method))), &parsedObj))
 	{
 		return true;
 	}
 
 	jvalue_ref ssidObj = {0}, methodObj = {0}, addressObj = {0}, netmaskObj = {0},
-	           gatewayObj = {0};
+	           gatewayObj = {0}, interfaceNameObj = {0};
 	ipv4info_t ipv4 = {0};
 	gchar *ssid = NULL;
+	gchar *interface_name = NULL;
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("method"), &methodObj))
 	{
@@ -1140,7 +1163,15 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 		jstring_free_buffer(ssid_buf);
 	}
 
-	service = retrieve_service_by_ssid(ssid);
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("interfaceName"), &interfaceNameObj))
+	{
+		raw_buffer interfaceName_buf = jstring_get(interfaceNameObj);
+		interface_name = g_strdup(interfaceName_buf.m_str);
+		jstring_free_buffer(interfaceName_buf);
+	}
+
+	service = retrieve_service_by_ssid(ssid, interface_name);
+
 
 	if (NULL != service)
 	{
@@ -1195,6 +1226,12 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 				goto exit;
 			}
 		}
+		else if(interface_name)
+		{
+			LSMessageReplyCustomError(sh, message, "Invalid Interface",
+		                          WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+			goto exit;
+		}
 
 		LSMessageReplyCustomError(sh, message, "Network not found",
 		                          WCA_API_ERROR_NETWORK_NOT_FOUND);
@@ -1210,6 +1247,7 @@ exit:
 	g_free(ipv4.netmask);
 	g_free(ipv4.gateway);
 	g_free(ssid);
+	g_free(interface_name);
 	j_release(&parsedObj);
 	return true;
 }
@@ -1225,19 +1263,20 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
 	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_5(PROP(method, string), PROP(address,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_6(PROP(method, string), PROP(address,
 	                                     string),
 	                                     PROP(prefixLength, integer), PROP(gateway, string), PROP(ssid,
-	                                             string)) REQUIRED_1(method))), &parsedObj))
+	                                             string), PROP(interfaceName, string)) REQUIRED_1(method))), &parsedObj))
 	{
 		return true;
 	}
 
 	jvalue_ref ssidObj = {0}, methodObj = {0}, addressObj = {0}, prefixLengthObj = {0},
-	           gatewayObj = {0};
+	           gatewayObj = {0}, interfaceNameObj = {0};
 	ipv6info_t ipv6 = {0};
 	gchar *ssid = NULL;
 	connman_service_t *service = NULL;
+	gchar *interface_name = NULL;
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("method"), &methodObj))
 	{
@@ -1285,7 +1324,15 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 		jstring_free_buffer(ssid_buf);
 	}
 
-	service = retrieve_service_by_ssid(ssid);
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("interfaceName"), &interfaceNameObj))
+	{
+		raw_buffer interfaceName_buf = jstring_get(interfaceNameObj);
+		interface_name = g_strdup(interfaceName_buf.m_str);
+		jstring_free_buffer(interfaceName_buf);
+	}
+
+	service = retrieve_service_by_ssid(ssid, interface_name);
+
 
 	if (NULL != service)
 	{
@@ -1341,6 +1388,12 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 				goto exit;
 			}
 		}
+		else if(interface_name)
+		{
+			LSMessageReplyCustomError(sh, message, "Invalid Interface",
+		                          WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+			goto exit;
+		}
 
 		LSMessageReplyCustomError(sh, message, "Network not found",
 		                          WCA_API_ERROR_NETWORK_NOT_FOUND);
@@ -1356,6 +1409,7 @@ exit:
 	g_free(ipv6.address);
 	g_free(ipv6.gateway);
 	g_free(ssid);
+	g_free(interface_name);
 	j_release(&parsedObj);
 	return true;
 }
@@ -1403,16 +1457,17 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
 	if (!LSMessageValidateSchema(sh, message,
-	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_2(ARRAY(dns, string), PROP(ssid,
-	                                     string)) REQUIRED_1(dns))), &parsedObj))
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_3(ARRAY(dns, string), PROP(ssid,
+	                                     string), PROP(interfaceName, string)) REQUIRED_1(dns))), &parsedObj))
 	{
 		return true;
 	}
 
-	jvalue_ref ssidObj = {0}, dnsObj = {0};
+	jvalue_ref ssidObj = {0}, dnsObj = {0}, interfaceNameObj = {0};
 	GStrv dns = NULL;
 	gchar *ssid = NULL;
 	connman_service_t *service = NULL;
+	gchar *interface_name = NULL;
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dns"), &dnsObj))
 	{
@@ -1441,7 +1496,15 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 		jstring_free_buffer(ssid_buf);
 	}
 
-	service = retrieve_service_by_ssid(ssid);
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("interfaceName"), &interfaceNameObj))
+	{
+		raw_buffer interfaceName_buf = jstring_get(interfaceNameObj);
+		interface_name = g_strdup(interfaceName_buf.m_str);
+		jstring_free_buffer(interfaceName_buf);
+	}
+
+	service = retrieve_service_by_ssid(ssid, interface_name);
+
 
 	if (NULL != service)
 	{
@@ -1473,6 +1536,12 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 				goto exit;
 			}
 		}
+		else if(interface_name)
+		{
+			LSMessageReplyCustomError(sh, message, "Invalid Interface",
+		                          WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
+			goto exit;
+		}
 
 		LSMessageReplyCustomError(sh, message, "No connected network",
 		                          WCA_API_ERROR_NO_CONNECTED_NW);
@@ -1485,6 +1554,7 @@ invalid_params:
 exit:
 	g_strfreev(dns);
 	g_free(ssid);
+	g_free(interface_name);
 	j_release(&parsedObj);
 	return true;
 }
@@ -2624,7 +2694,7 @@ static bool handle_set_proxy_command(LSHandle *sh,
 			goto invalid_params;
 	}
 
-	service = retrieve_service_by_ssid(ssid);
+	service = retrieve_service_by_ssid(ssid,NULL);
 
 	if (NULL != service)
 	{
