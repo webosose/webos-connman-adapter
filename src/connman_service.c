@@ -743,6 +743,30 @@ gboolean compare_strv(gchar **first, gchar **second)
 	return TRUE;
 }
 
+static void update_string_val_from_first_element(GVariant *inVal, gchar **outVal)
+{
+	GVariant *inValv = g_variant_get_child_value(inVal, 1);
+	GVariant *inValva = g_variant_get_variant(inValv);
+
+	g_free(*outVal);
+	*outVal = g_variant_dup_string(inValva, NULL);
+
+	g_variant_unref(inValv);
+	g_variant_unref(inValva);
+}
+
+static gint get_int_val_from_first_element(GVariant *inVal)
+{
+	GVariant *inValv = g_variant_get_child_value(inVal, 1);
+	GVariant *inValva = g_variant_get_variant(inValv);
+	const char *prefix_length = g_variant_get_data(inValva);
+	gint retval = *prefix_length;
+
+	g_variant_unref(inValv);
+	g_variant_unref(inValva);
+	return retval;
+}
+
 /**
  * Get all the network related information for a connected service (in online state)
  * (see header for API details)
@@ -757,7 +781,6 @@ gboolean connman_service_get_ipinfo(connman_service_t *service)
 
 	GError *error = NULL;
 	GVariant *properties;
-	gsize i;
 
 	connman_interface_service_call_get_properties_sync(service->remote, &properties,
 	        NULL, &error);
@@ -769,7 +792,7 @@ gboolean connman_service_get_ipinfo(connman_service_t *service)
 		return FALSE;
 	}
 
-	for (i = 0; i < g_variant_n_children(properties); i++)
+	for (gsize i = 0; i < g_variant_n_children(properties); i++)
 	{
 		GVariant *property = g_variant_get_child_value(properties, i);
 		GVariant *key_v = g_variant_get_child_value(property, 0);
@@ -779,25 +802,15 @@ gboolean connman_service_get_ipinfo(connman_service_t *service)
 		{
 			GVariant *v = g_variant_get_child_value(property, 1);
 			GVariant *va = g_variant_get_child_value(v, 0);
-			gsize j;
 
-			for (j = 0; j < g_variant_n_children(va); j++)
+			for (gsize j = 0; j < g_variant_n_children(va); j++)
 			{
 				GVariant *ethernet = g_variant_get_child_value(va, j);
 				GVariant *ekey_v = g_variant_get_child_value(ethernet, 0);
 				const gchar *ekey = g_variant_get_string(ekey_v, NULL);
 
 				if (!g_strcmp0(ekey, "Interface"))
-				{
-					GVariant *ifacev = g_variant_get_child_value(ethernet, 1);
-					GVariant *ifaceva = g_variant_get_variant(ifacev);
-
-					g_free(service->ipinfo.iface);
-					service->ipinfo.iface = g_variant_dup_string(ifaceva, NULL);
-
-					g_variant_unref(ifacev);
-					g_variant_unref(ifaceva);
-				}
+					update_string_val_from_first_element(ethernet,&(service->ipinfo.iface));
 
 				g_variant_unref(ethernet);
 				g_variant_unref(ekey_v);
@@ -812,61 +825,24 @@ gboolean connman_service_get_ipinfo(connman_service_t *service)
 
 			GVariant *v = g_variant_get_child_value(property, 1);
 			GVariant *va = g_variant_get_child_value(v, 0);
-			gsize j;
 
-			for (j = 0; j < g_variant_n_children(va); j++)
+			for (gsize j = 0; j < g_variant_n_children(va); j++)
 			{
 				GVariant *ipv6 = g_variant_get_child_value(va, j);
 				GVariant *ikey_v = g_variant_get_child_value(ipv6, 0);
 				const gchar *ikey = g_variant_get_string(ikey_v, NULL);
 
 				if (!g_strcmp0(ikey, "Method"))
-				{
-					GVariant *methodv = g_variant_get_child_value(ipv6, 1);
-					GVariant *methodva = g_variant_get_variant(methodv);
-
-					g_free(service->ipinfo.ipv6.method);
-					service->ipinfo.ipv6.method = g_variant_dup_string(methodva, NULL);
-
-					g_variant_unref(methodv);
-					g_variant_unref(methodva);
-				}
+					update_string_val_from_first_element(ipv6,&(service->ipinfo.ipv6.method));
 
 				if (!g_strcmp0(ikey, "PrefixLength"))
-				{
-					GVariant *prefix_lengthv = g_variant_get_child_value(ipv6, 1);
-					GVariant *prefix_lengthva = g_variant_get_variant(prefix_lengthv);
-					const char *prefix_length = g_variant_get_data(prefix_lengthva);
-
-					service->ipinfo.ipv6.prefix_length = *prefix_length;
-
-					g_variant_unref(prefix_lengthv);
-					g_variant_unref(prefix_lengthva);
-				}
+					service->ipinfo.ipv6.prefix_length = get_int_val_from_first_element(ipv6);
 
 				if (!g_strcmp0(ikey, "Address"))
-				{
-					GVariant *addressv = g_variant_get_child_value(ipv6, 1);
-					GVariant *addressva = g_variant_get_variant(addressv);
-
-					g_free(service->ipinfo.ipv6.address);
-					service->ipinfo.ipv6.address = g_variant_dup_string(addressva, NULL);
-
-					g_variant_unref(addressv);
-					g_variant_unref(addressva);
-				}
+					update_string_val_from_first_element(ipv6,&(service->ipinfo.ipv6.address));
 
 				if (!g_strcmp0(ikey, "Gateway"))
-				{
-					GVariant *gatewayv = g_variant_get_child_value(ipv6, 1);
-					GVariant *gatewayva = g_variant_get_variant(gatewayv);
-
-					g_free(service->ipinfo.ipv6.gateway);
-					service->ipinfo.ipv6.gateway = g_variant_dup_string(gatewayva, NULL);
-
-					g_variant_unref(gatewayv);
-					g_variant_unref(gatewayva);
-				}
+					update_string_val_from_first_element(ipv6,&(service->ipinfo.ipv6.gateway));
 
 				g_variant_unref(ipv6);
 				g_variant_unref(ikey_v);
@@ -881,72 +857,27 @@ gboolean connman_service_get_ipinfo(connman_service_t *service)
 		{
 			GVariant *v = g_variant_get_child_value(property, 1);
 			GVariant *va = g_variant_get_child_value(v, 0);
-			gsize j;
 
-			for (j = 0; j < g_variant_n_children(va); j++)
+			for (gsize j = 0; j < g_variant_n_children(va); j++)
 			{
 				GVariant *ipv4 = g_variant_get_child_value(va, j);
 				GVariant *ikey_v = g_variant_get_child_value(ipv4, 0);
 				const gchar *ikey = g_variant_get_string(ikey_v, NULL);
 
 				if (!g_strcmp0(ikey, "Method"))
-				{
-					GVariant *methodv = g_variant_get_child_value(ipv4, 1);
-					GVariant *methodva = g_variant_get_variant(methodv);
-
-					g_free(service->ipinfo.ipv4.method);
-					service->ipinfo.ipv4.method = g_variant_dup_string(methodva, NULL);
-
-					g_variant_unref(methodv);
-					g_variant_unref(methodva);
-				}
+					update_string_val_from_first_element(ipv4,&(service->ipinfo.ipv4.method));
 
 				if (!g_strcmp0(ikey, "PrefixLength"))
-				{
-					GVariant *prefix_lengthv = g_variant_get_child_value(ipv4, 1);
-					GVariant *prefix_lengthva = g_variant_get_variant(prefix_lengthv);
-					const char *prefix_length = g_variant_get_data(prefix_lengthva);
-					service->ipinfo.ipv4.prefix_len = *prefix_length;
-
-					g_variant_unref(prefix_lengthv);
-					g_variant_unref(prefix_lengthva);
-				}
+					service->ipinfo.ipv4.prefix_len = get_int_val_from_first_element(ipv4);
 
 				if (!g_strcmp0(ikey, "Netmask"))
-				{
-					GVariant *netmaskv = g_variant_get_child_value(ipv4, 1);
-					GVariant *netmaskva = g_variant_get_variant(netmaskv);
-
-					g_free(service->ipinfo.ipv4.netmask);
-					service->ipinfo.ipv4.netmask = g_variant_dup_string(netmaskva, NULL);
-
-					g_variant_unref(netmaskv);
-					g_variant_unref(netmaskva);
-				}
+					update_string_val_from_first_element(ipv4,&(service->ipinfo.ipv4.netmask));
 
 				if (!g_strcmp0(ikey, "Address"))
-				{
-					GVariant *addressv = g_variant_get_child_value(ipv4, 1);
-					GVariant *addressva = g_variant_get_variant(addressv);
-
-					g_free(service->ipinfo.ipv4.address);
-					service->ipinfo.ipv4.address = g_variant_dup_string(addressva, NULL);
-
-					g_variant_unref(addressv);
-					g_variant_unref(addressva);
-				}
+					update_string_val_from_first_element(ipv4,&(service->ipinfo.ipv4.address));
 
 				if (!g_strcmp0(ikey, "Gateway"))
-				{
-					GVariant *gatewayv = g_variant_get_child_value(ipv4, 1);
-					GVariant *gatewayva = g_variant_get_variant(gatewayv);
-
-					g_free(service->ipinfo.ipv4.gateway);
-					service->ipinfo.ipv4.gateway = g_variant_dup_string(gatewayva, NULL);
-
-					g_variant_unref(gatewayv);
-					g_variant_unref(gatewayva);
-				}
+					update_string_val_from_first_element(ipv4,&(service->ipinfo.ipv4.gateway));
 
 				g_variant_unref(ipv4);
 				g_variant_unref(ikey_v);
@@ -1023,28 +954,10 @@ gboolean connman_service_get_proxyinfo(connman_service_t *service)
 				const gchar *pkey = g_variant_get_string(pkey_v, NULL);
 
 				if (!g_strcmp0(pkey, "Method"))
-				{
-					GVariant *methodv = g_variant_get_child_value(proxy, 1);
-					GVariant *methodva = g_variant_get_variant(methodv);
-
-					g_free(service->proxyinfo.method);
-					service->proxyinfo.method = g_variant_dup_string(methodva, NULL);
-
-					g_variant_unref(methodv);
-					g_variant_unref(methodva);
-				}
+					update_string_val_from_first_element(proxy,&(service->proxyinfo.method));
 
 				if (!g_strcmp0(pkey, "URL"))
-				{
-					GVariant *urlv = g_variant_get_child_value(proxy, 1);
-					GVariant *urlva = g_variant_get_variant(urlv);
-
-					g_free(service->proxyinfo.url);
-					service->proxyinfo.url = g_variant_dup_string(urlva, NULL);
-
-					g_variant_unref(urlv);
-					g_variant_unref(urlva);
-				}
+					update_string_val_from_first_element(proxy,&(service->proxyinfo.url));
 
 				if (!g_strcmp0(pkey, "Servers"))
 				{
@@ -1089,7 +1002,6 @@ gboolean connman_service_get_proxyinfo(connman_service_t *service)
 
 static void connman_service_set_ip_rule(connman_service_t *service , bool status)
 {
-	WCALOG_DEBUG("connman_service_set_ip_rule");
 	if ((NULL != service->ipinfo.ipv4.address)&&
 		(NULL != service->ipinfo.ipv4.netmask)&&
 		(NULL != service->ipinfo.ipv4.gateway)&&
@@ -1105,7 +1017,6 @@ static void connman_service_set_ip_rule(connman_service_t *service , bool status
 		if(assigned > 0)
 		{
 			table_Id = table_Id+10;
-			WCALOG_DEBUG("connman_service_set_ip_rule Ready state address available %s ID %d", service->interface_name , table_Id);
 			sprintf(addtable,"ip route %s table %d default via %s", (status) ? "add" : "delete", table_Id , service->ipinfo.ipv4.gateway);
 			system(addtable);
 			char addDestrule[80] = {0,};
@@ -1121,7 +1032,6 @@ static void connman_service_set_ip_rule(connman_service_t *service , bool status
 
 static void connman_service_create_ip_rule(connman_service_t *service)
 {
-	WCALOG_DEBUG("connman_service_create_ip_rule ");
 	if (!service->iprule_added &&
 		(!g_strcmp0(service->state, "ready")))
 		connman_service_set_ip_rule(service,true);
@@ -1129,7 +1039,6 @@ static void connman_service_create_ip_rule(connman_service_t *service)
 
 static void connman_service_delete_ip_rule(connman_service_t *service)
 {
-	WCALOG_DEBUG("connman_service_delete_ip_rule ");
 	if ( service->iprule_added)
 		connman_service_set_ip_rule(service,false);
 }
@@ -1599,6 +1508,22 @@ void connman_service_update_display_name(connman_service_t *service)
 	WCALOG_INFO("SSID_CONVERSION", 0, "Convert result: service->ssid: %s --> service->display_name: %s", service->ssid, service->display_name);
 }
 
+void connman_service_update_type(connman_service_t *service, const gchar *v)
+{
+	if (!g_strcmp0(v, "wifi"))
+	{
+		service->type = CONNMAN_SERVICE_TYPE_WIFI;
+	}
+	else if (!g_strcmp0(v, "ethernet"))
+	{
+		service->type = CONNMAN_SERVICE_TYPE_ETHERNET;
+	}
+	else if (!g_strcmp0(v, "Peer") || (!g_strcmp0(v, "peer")))
+	{
+		service->type = CONNMAN_SERVICE_TYPE_P2P;
+	}
+}
+
 static void p2p_parse_wfd_dev_info(unsigned char *wfd_subelems, int len,
 					struct peer* peer)
 {
@@ -1676,19 +1601,7 @@ void connman_service_update_properties(connman_service_t *service,
 		else if (!g_strcmp0(key, "Type"))
 		{
 			const gchar *v = g_variant_get_string(val, NULL);
-
-			if (!g_strcmp0(v, "wifi"))
-			{
-				service->type = CONNMAN_SERVICE_TYPE_WIFI;
-			}
-			else if (!g_strcmp0(v, "ethernet"))
-			{
-				service->type = CONNMAN_SERVICE_TYPE_ETHERNET;
-			}
-			else if (!g_strcmp0(v, "Peer") || (!g_strcmp0(v, "peer")))
-			{
-				service->type = CONNMAN_SERVICE_TYPE_P2P;
-			}
+			connman_service_update_type(service,v);
 		}
 		else if (!g_strcmp0(key, "State"))
 		{
@@ -1858,24 +1771,14 @@ void connman_service_update_properties(connman_service_t *service,
 
 				if (!g_strcmp0(ekey, "Interface"))
 				{
-					GVariant *ifacev = g_variant_get_child_value(ethernet, 1);
-					GVariant *ifaceva = g_variant_get_variant(ifacev);
-					g_free(service->interface_name);
-					service->interface_name = g_variant_dup_string(ifaceva, NULL);
+					update_string_val_from_first_element(ethernet,&(service->interface_name));
 #ifdef MULTIPLE_ROUTING_TABLE
 					connman_service_create_ip_rule(service);
 #endif
-					g_variant_unref(ifacev);
-					g_variant_unref(ifaceva);
 				}
 				else if (!g_strcmp0(ekey, "Address"))
 				{
-					GVariant *macv = g_variant_get_child_value(ethernet, 1);
-					GVariant *macva = g_variant_get_variant(macv);
-					g_free(service->mac_address);
-					service->mac_address = g_variant_dup_string(macva, NULL);
-					g_variant_unref(macv);
-					g_variant_unref(macva);
+					update_string_val_from_first_element(ethernet,&(service->mac_address));
 				}
 				g_variant_unref(ethernet);
 				g_variant_unref(ekey_v);

@@ -1952,9 +1952,6 @@ static gboolean signal_polling_cb(gpointer user_data)
 
 static void start_signal_polling()
 {
-	connman_technology_t *wifi_technology = connman_manager_find_wifi_technology(
-	        manager);
-
 	if (0 == signal_polling_timeout_source)
 	{
 		signal_polling_timeout_source = g_timeout_add_seconds(3, signal_polling_cb,
@@ -3729,9 +3726,6 @@ static bool handle_set_country_code_command(LSHandle *sh,
 
 	jvalue_ref countryCodeObj = NULL;
 	char *countryCode = NULL;
-
-	connman_technology_t *technology = connman_manager_find_wifi_technology(
-	                                       manager);
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("countryCode"), &countryCodeObj))
 	{
