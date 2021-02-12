@@ -96,6 +96,35 @@ static void getinfo_update(void);
 
 #define IS_WIRED_PLUGGED() g_slist_length(manager->wired_services)
 
+static void update_string_value(jvalue_ref *status, jvalue_ref key, gchar *inVal)
+{
+	if (NULL != inVal)
+		jobject_put(*status,key, jstring_create(inVal));
+}
+
+static void update_ipv6(jvalue_ref *status, connman_service_t *service)
+{
+	if (NULL != service->ipinfo.ipv6.address)
+	{
+		jvalue_ref connected_ipv6_status = jobject_create();
+
+		jobject_put(connected_ipv6_status, J_CSTR_TO_JVAL("ipAddress"),
+					jstring_create(service->ipinfo.ipv6.address));
+
+		if (service->ipinfo.ipv6.prefix_length >= 0 &&
+				service->ipinfo.ipv6.prefix_length <= 128)
+		{
+			jobject_put(connected_ipv6_status, J_CSTR_TO_JVAL("prefixLength"),
+						jnumber_create_i32(service->ipinfo.ipv6.prefix_length));
+		}
+
+		update_string_value(&connected_ipv6_status, J_CSTR_TO_JVAL("gateway"),service->ipinfo.ipv6.gateway);
+		update_string_value(&connected_ipv6_status, J_CSTR_TO_JVAL("method"),service->ipinfo.ipv6.method);
+
+		jobject_put(*status, J_CSTR_TO_JVAL("ipv6"), connected_ipv6_status);
+	}
+
+}
 /**
  * @brief Fill in information about the system's connection status
  *
@@ -122,29 +151,10 @@ static void update_connection_status(connman_service_t *connected_service,
 		connman_service_get_ipinfo(connected_service);
 		jobject_put(*status, J_CSTR_TO_JVAL("state"), jstring_create("connected"));
 
-		if (NULL != connected_service->ipinfo.iface)
-		{
-			jobject_put(*status, J_CSTR_TO_JVAL("interfaceName"),
-			            jstring_create(connected_service->ipinfo.iface));
-		}
-
-		if (NULL != connected_service->ipinfo.ipv4.address)
-		{
-			jobject_put(*status, J_CSTR_TO_JVAL("ipAddress"),
-			            jstring_create(connected_service->ipinfo.ipv4.address));
-		}
-
-		if (NULL != connected_service->ipinfo.ipv4.netmask)
-		{
-			jobject_put(*status, J_CSTR_TO_JVAL("netmask"),
-			            jstring_create(connected_service->ipinfo.ipv4.netmask));
-		}
-
-		if (NULL != connected_service->ipinfo.ipv4.gateway)
-		{
-			jobject_put(*status, J_CSTR_TO_JVAL("gateway"),
-			            jstring_create(connected_service->ipinfo.ipv4.gateway));
-		}
+		update_string_value(status, J_CSTR_TO_JVAL("interfaceName"),connected_service->ipinfo.iface);
+		update_string_value(status, J_CSTR_TO_JVAL("ipAddress"),connected_service->ipinfo.ipv4.address);
+		update_string_value(status, J_CSTR_TO_JVAL("netmask"),connected_service->ipinfo.ipv4.netmask);
+		update_string_value(status, J_CSTR_TO_JVAL("gateway"),connected_service->ipinfo.ipv4.gateway);
 
 		gsize i;
 		char dns_str[16];
@@ -156,20 +166,11 @@ static void update_connection_status(connman_service_t *connected_service,
 			            jstring_create(connected_service->ipinfo.dns[i]));
 		}
 
-		if (NULL != connected_service->ipinfo.ipv4.method)
-		{
-			jobject_put(*status, J_CSTR_TO_JVAL("method"),
-			            jstring_create(connected_service->ipinfo.ipv4.method));
-		}
+		update_string_value(status, J_CSTR_TO_JVAL("method"),connected_service->ipinfo.ipv4.method);
 
 		if (connman_service_type_wifi(connected_service))
 		{
-			if (NULL != connected_service->name)
-			{
-				jobject_put(*status, J_CSTR_TO_JVAL("ssid"),
-				            jstring_create(connected_service->name));
-			}
-
+			update_string_value(status, J_CSTR_TO_JVAL("ssid"),connected_service->name);
 			jobject_put(*status, J_CSTR_TO_JVAL("isWakeOnWifiEnabled"),
 			            jboolean_create(false));
 		}
@@ -178,34 +179,7 @@ static void update_connection_status(connman_service_t *connected_service,
 		jobject_put(*status, J_CSTR_TO_JVAL("onInternet"), jstring_create(s));
 		jobject_put(*status, J_CSTR_TO_JVAL("checkingInternet"), jboolean_create(connected_service->online_checking));
 
-		if (NULL != connected_service->ipinfo.ipv6.address)
-		{
-			jvalue_ref connected_ipv6_status = jobject_create();
-
-			jobject_put(connected_ipv6_status, J_CSTR_TO_JVAL("ipAddress"),
-			            jstring_create(connected_service->ipinfo.ipv6.address));
-
-			if (connected_service->ipinfo.ipv6.prefix_length >= 0 &&
-			        connected_service->ipinfo.ipv6.prefix_length <= 128)
-			{
-				jobject_put(connected_ipv6_status, J_CSTR_TO_JVAL("prefixLength"),
-				            jnumber_create_i32(connected_service->ipinfo.ipv6.prefix_length));
-			}
-
-			if (NULL != connected_service->ipinfo.ipv6.gateway)
-			{
-				jobject_put(connected_ipv6_status, J_CSTR_TO_JVAL("gateway"),
-				            jstring_create(connected_service->ipinfo.ipv6.gateway));
-			}
-
-			if (NULL != connected_service->ipinfo.ipv6.method)
-			{
-				jobject_put(connected_ipv6_status, J_CSTR_TO_JVAL("method"),
-				            jstring_create(connected_service->ipinfo.ipv6.method));
-			}
-
-			jobject_put(*status, J_CSTR_TO_JVAL("ipv6"), connected_ipv6_status);
-		}
+		update_ipv6(status,connected_service);
 
 		connman_service_get_proxyinfo(connected_service);
 
@@ -218,11 +192,7 @@ static void update_connection_status(connman_service_t *connected_service,
 
 			if (!g_strcmp0(connected_service->proxyinfo.method, "auto"))
 			{
-				if (NULL != connected_service->proxyinfo.url)
-				{
-					jobject_put(connected_proxy_status, J_CSTR_TO_JVAL("url"),
-								jstring_create(connected_service->proxyinfo.url));
-				}
+				update_string_value(&connected_proxy_status, J_CSTR_TO_JVAL("url"),connected_service->proxyinfo.url);
 			}
 			else if(!g_strcmp0(connected_service->proxyinfo.method, "manual"))
 			{
@@ -1051,6 +1021,57 @@ static connman_service_t *retrieve_service_by_ssid(gchar *ssid, gchar *interface
 	return NULL;
 }
 
+static void get_string_value(jvalue_ref parsedObj,raw_buffer key, gchar **outVal)
+{
+	jvalue_ref Obj = {0};
+	if (jobject_get_exists(parsedObj, key, &Obj))
+	{
+		raw_buffer obj_buf = jstring_get(Obj);
+		*outVal = g_strdup(obj_buf.m_str);
+		jstring_free_buffer(obj_buf);
+	}
+}
+
+static bool get_ipv4_value(jvalue_ref parsedObj, ipv4info_t* ipv4info)
+{
+	jvalue_ref addressObj = {0}, netmaskObj = {0}, gatewayObj = {0};
+
+	get_string_value(parsedObj,J_CSTR_TO_BUF("method"),&(ipv4info->method));
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("address"), &addressObj))
+	{
+		raw_buffer address_buf = jstring_get(addressObj);
+		ipv4info->address = g_strdup(address_buf.m_str);
+		jstring_free_buffer(address_buf);
+
+		if (!is_valid_ipaddress(ipv4info->address))
+			return false;
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("netmask"), &netmaskObj))
+	{
+		raw_buffer netmask_buf = jstring_get(netmaskObj);
+		ipv4info->netmask = g_strdup(netmask_buf.m_str);
+		jstring_free_buffer(netmask_buf);
+
+		if (!is_valid_ipaddress(ipv4info->netmask))
+			return false;
+
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("gateway"), &gatewayObj))
+	{
+		raw_buffer gateway_buf = jstring_get(gatewayObj);
+		ipv4info->gateway = g_strdup(gateway_buf.m_str);
+		jstring_free_buffer(gateway_buf);
+
+		if (!is_valid_ipaddress(ipv4info->gateway))
+			return false;
+	}
+
+	return true;
+}
+
 //->Start of API documentation comment block
 /**
 @page com_webos_connectionmanager com.webos.connectionmanager
@@ -1107,68 +1128,16 @@ static bool handle_set_ipv4_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	jvalue_ref ssidObj = {0}, methodObj = {0}, addressObj = {0}, netmaskObj = {0},
-	           gatewayObj = {0}, interfaceNameObj = {0};
 	ipv4info_t ipv4 = {0};
 	gchar *ssid = NULL;
 	gchar *interface_name = NULL;
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("method"), &methodObj))
-	{
-		raw_buffer method_buf = jstring_get(methodObj);
-		ipv4.method = g_strdup(method_buf.m_str);
-		jstring_free_buffer(method_buf);
-	}
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("address"), &addressObj))
-	{
-		raw_buffer address_buf = jstring_get(addressObj);
-		ipv4.address = g_strdup(address_buf.m_str);
-		jstring_free_buffer(address_buf);
+	if(!get_ipv4_value(parsedObj,&ipv4))
+		goto invalid_params;
 
-		if (!is_valid_ipaddress(ipv4.address))
-		{
-			goto invalid_params;
-		}
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("netmask"), &netmaskObj))
-	{
-		raw_buffer netmask_buf = jstring_get(netmaskObj);
-		ipv4.netmask = g_strdup(netmask_buf.m_str);
-		jstring_free_buffer(netmask_buf);
-
-		if (!is_valid_ipaddress(ipv4.netmask))
-		{
-			goto invalid_params;
-		}
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("gateway"), &gatewayObj))
-	{
-		raw_buffer gateway_buf = jstring_get(gatewayObj);
-		ipv4.gateway = g_strdup(gateway_buf.m_str);
-		jstring_free_buffer(gateway_buf);
-
-		if (!is_valid_ipaddress(ipv4.gateway))
-		{
-			goto invalid_params;
-		}
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
-	{
-		raw_buffer ssid_buf = jstring_get(ssidObj);
-		ssid = g_strdup(ssid_buf.m_str);
-		jstring_free_buffer(ssid_buf);
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("interfaceName"), &interfaceNameObj))
-	{
-		raw_buffer interfaceName_buf = jstring_get(interfaceNameObj);
-		interface_name = g_strdup(interfaceName_buf.m_str);
-		jstring_free_buffer(interfaceName_buf);
-	}
+	get_string_value(parsedObj,J_CSTR_TO_BUF("ssid"),&ssid);
+	get_string_value(parsedObj,J_CSTR_TO_BUF("interfaceName"),&interface_name);
 
 	service = retrieve_service_by_ssid(ssid, interface_name);
 
@@ -1252,6 +1221,44 @@ exit:
 	return true;
 }
 
+
+static bool get_ipv6_value(jvalue_ref parsedObj, ipv6info_t* ipv6info)
+{
+	jvalue_ref addressObj = {0}, prefixLengthObj = {0}, gatewayObj = {0};
+
+	get_string_value(parsedObj,J_CSTR_TO_BUF("method"),&(ipv6info->method));
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("address"), &addressObj))
+	{
+		raw_buffer address_buf = jstring_get(addressObj);
+		ipv6info->address = g_strdup(address_buf.m_str);
+		jstring_free_buffer(address_buf);
+
+		if (!is_valid_ipv6address(ipv6info->address))
+			return false;
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("prefixLength"),
+	                       &prefixLengthObj))
+	{
+		int prefixLength_val = 0;
+		jnumber_get_i32(prefixLengthObj, &prefixLength_val);
+		ipv6info->prefix_length = prefixLength_val;
+	}
+
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("gateway"), &gatewayObj))
+	{
+		raw_buffer gateway_buf = jstring_get(gatewayObj);
+		ipv6info->gateway = g_strdup(gateway_buf.m_str);
+		jstring_free_buffer(gateway_buf);
+
+		if (!is_valid_ipv6address(ipv6info->gateway))
+			return false;
+	}
+
+	return true;
+}
+
 static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
                                     void *context)
 {
@@ -1271,65 +1278,16 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	jvalue_ref ssidObj = {0}, methodObj = {0}, addressObj = {0}, prefixLengthObj = {0},
-	           gatewayObj = {0}, interfaceNameObj = {0};
 	ipv6info_t ipv6 = {0};
 	gchar *ssid = NULL;
 	connman_service_t *service = NULL;
 	gchar *interface_name = NULL;
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("method"), &methodObj))
-	{
-		raw_buffer method_buf = jstring_get(methodObj);
-		ipv6.method = g_strdup(method_buf.m_str);
-		jstring_free_buffer(method_buf);
-	}
+	if(!get_ipv6_value(parsedObj,&ipv6))
+		goto invalid_params;
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("address"), &addressObj))
-	{
-		raw_buffer address_buf = jstring_get(addressObj);
-		ipv6.address = g_strdup(address_buf.m_str);
-		jstring_free_buffer(address_buf);
-
-		if (!is_valid_ipv6address(ipv6.address))
-		{
-			goto invalid_params;
-		}
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("prefixLength"),
-	                       &prefixLengthObj))
-	{
-		int prefixLength_val = 0;
-		jnumber_get_i32(prefixLengthObj, &prefixLength_val);
-		ipv6.prefix_length = prefixLength_val;
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("gateway"), &gatewayObj))
-	{
-		raw_buffer gateway_buf = jstring_get(gatewayObj);
-		ipv6.gateway = g_strdup(gateway_buf.m_str);
-		jstring_free_buffer(gateway_buf);
-
-		if (!is_valid_ipv6address(ipv6.gateway))
-		{
-			goto invalid_params;
-		}
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
-	{
-		raw_buffer ssid_buf = jstring_get(ssidObj);
-		ssid = g_strdup(ssid_buf.m_str);
-		jstring_free_buffer(ssid_buf);
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("interfaceName"), &interfaceNameObj))
-	{
-		raw_buffer interfaceName_buf = jstring_get(interfaceNameObj);
-		interface_name = g_strdup(interfaceName_buf.m_str);
-		jstring_free_buffer(interfaceName_buf);
-	}
+	get_string_value(parsedObj,J_CSTR_TO_BUF("ssid"),&ssid);
+	get_string_value(parsedObj,J_CSTR_TO_BUF("interfaceName"),&interface_name);
 
 	service = retrieve_service_by_ssid(ssid, interface_name);
 
@@ -1463,7 +1421,7 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	jvalue_ref ssidObj = {0}, dnsObj = {0}, interfaceNameObj = {0};
+	jvalue_ref dnsObj = {0};
 	GStrv dns = NULL;
 	gchar *ssid = NULL;
 	connman_service_t *service = NULL;
@@ -1489,19 +1447,8 @@ static bool handle_set_dns_command(LSHandle *sh, LSMessage *message,
 		dns[dns_arrsize] = NULL;
 	}
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
-	{
-		raw_buffer ssid_buf = jstring_get(ssidObj);
-		ssid = g_strdup(ssid_buf.m_str);
-		jstring_free_buffer(ssid_buf);
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("interfaceName"), &interfaceNameObj))
-	{
-		raw_buffer interfaceName_buf = jstring_get(interfaceNameObj);
-		interface_name = g_strdup(interfaceName_buf.m_str);
-		jstring_free_buffer(interfaceName_buf);
-	}
+	get_string_value(parsedObj,J_CSTR_TO_BUF("ssid"),&ssid);
+	get_string_value(parsedObj,J_CSTR_TO_BUF("interfaceName"),&interface_name);
 
 	service = retrieve_service_by_ssid(ssid, interface_name);
 
@@ -2633,7 +2580,7 @@ static bool handle_set_proxy_command(LSHandle *sh,
 		return true;
 	}
 
-	jvalue_ref ssidObj = {0}, methodObj = {0}, urlObj = {0}, serversObj = {0}, excludesObj = {0};
+	jvalue_ref methodObj = {0}, urlObj = {0}, serversObj = {0}, excludesObj = {0};
 	proxyinfo_t proxyinfo = {0};
 	gchar *ssid = NULL;
 
@@ -2681,12 +2628,7 @@ static bool handle_set_proxy_command(LSHandle *sh,
 		proxyinfo.excludes[excludes_arrsize] = NULL;
 	}
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
-	{
-		raw_buffer ssid_buf = jstring_get(ssidObj);
-		ssid = g_strdup(ssid_buf.m_str);
-		jstring_free_buffer(ssid_buf);
-	}
+	get_string_value(parsedObj,J_CSTR_TO_BUF("ssid"),&ssid);
 
 	if (!g_strcmp0(proxyinfo.method, "manual"))
 	{
@@ -2742,22 +2684,10 @@ static bool handle_find_proxy_for_url_command(LSHandle *sh,
 	jvalue_ref reply = jobject_create();
 	LSError lserror;
 	LSErrorInit(&lserror);
-	jvalue_ref urlObj = {0}, hostObj = {0};
 	gchar *url = NULL, *host = NULL, *proxy = NULL;
 
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("url"), &urlObj))
-	{
-		raw_buffer url_buf = jstring_get(urlObj);
-		url = g_strdup(url_buf.m_str);
-		jstring_free_buffer(url_buf);
-	}
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("host"), &hostObj))
-	{
-		raw_buffer host_buf = jstring_get(hostObj);
-		host = g_strdup(host_buf.m_str);
-		jstring_free_buffer(host_buf);
-	}
+	get_string_value(parsedObj,J_CSTR_TO_BUF("url"),&url);
+	get_string_value(parsedObj,J_CSTR_TO_BUF("host"),&host);
 
 	pacrunner_client_t *client = pacrunner_client_new();
 
@@ -2815,7 +2745,7 @@ static bool handle_set_default_interface(LSHandle *sh, LSMessage *message,
 	}
 
 	connman_service_t *service = NULL;
-	gchar *interfaceName = NULL;
+	gchar *interface_name = NULL;
 
 	// To prevent memory leaks, schema should be checked before the variables will be initialized.
 	jvalue_ref parsedObj = {0};
@@ -2825,16 +2755,8 @@ static bool handle_set_default_interface(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	jvalue_ref interfaceObj = {0};
-
-	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ifName"), &interfaceObj))
-	{
-		raw_buffer interface_buf = jstring_get(interfaceObj);
-		interfaceName = g_strdup(interface_buf.m_str);
-		jstring_free_buffer(interface_buf);
-	}
-
-	service = connman_manager_retreive_service_by_interfaceName(manager->wired_services ,interfaceName);
+	get_string_value(parsedObj,J_CSTR_TO_BUF("ifName"),&interface_name);
+	service = connman_manager_retreive_service_by_interfaceName(manager->wired_services ,interface_name);
 
 	if (NULL != service)
 	{
@@ -2869,7 +2791,7 @@ static bool handle_set_default_interface(LSHandle *sh, LSMessage *message,
 									WCA_API_ERROR_INTERFACE_NOT_CONNECTED);
 	}
 
-	g_free(interfaceName);
+	g_free(interface_name);
 	j_release(&parsedObj);
 	return true;
 }

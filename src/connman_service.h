@@ -440,7 +440,7 @@ extern void connman_service_set_changed(connman_service_t *service,
 extern gboolean connman_service_is_changed(connman_service_t *service,
         unsigned int category);
 extern void connman_service_update_display_name(connman_service_t *service);
-
+extern void connman_service_update_type(connman_service_t *service, const gchar *v);
 
 extern gboolean connman_service_set_run_online_check(connman_service_t *service,
         gboolean value);
