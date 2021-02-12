@@ -423,7 +423,7 @@ void wifi_scan_start(connman_technology_t* _wifi_tech)
 	}
 }
 
-gboolean wifi_scan_now_with_option(const GStrv *ssid, const GStrv *freq)
+gboolean wifi_scan_now_with_option(const GStrv *ssid, const int *freq, const int freq_num)
 {
 	if (!wifi_tech)
 	{
@@ -432,7 +432,6 @@ gboolean wifi_scan_now_with_option(const GStrv *ssid, const GStrv *freq)
 
 	gsize i;
 	gsize ssid_num = g_strv_length(ssid);
-	gsize freq_num = g_strv_length(freq);
 
 	gchar *ssidstr = g_strnfill(32 * (ssid_num + 1), 0);
 	gchar *freqstr = g_strnfill(5 * (ssid_num + 1), 0);

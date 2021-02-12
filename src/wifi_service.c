@@ -70,6 +70,7 @@ errorText | Yes | String | Error description
 #define MAX_PREFIX_LENGTH   128
 
 #define MAX_COUNTRY_CODE_LENGTH 2
+#define MAX_FREQUENCY_CHANNELS 10
 
 static LSHandle *pLsHandle;
 
@@ -2645,7 +2646,8 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 	}
 
 	GStrv ssid = NULL;
-	GStrv frequency = NULL;
+	int frequency[MAX_FREQUENCY_CHANNELS] = {0};
+	int freq_cnt = 0;
 	jvalue_ref ssidObj = {0};
 	jvalue_ref frequencyObj = {0};
 	bool is_scan_option = false;
@@ -2669,16 +2671,15 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("frequency"), &frequencyObj))
 	{
 		int i, frequency_arrsize = jarray_size(frequencyObj);
-		frequency = (GStrv) g_new0(GStrv, frequency_arrsize + 1);
 
-		for (i = 0; i < frequency_arrsize; i++)
+		for (i = 0; i < frequency_arrsize && i < MAX_FREQUENCY_CHANNELS; i++)
 		{
 			int freq = 0;
 			jnumber_get_i32(jarray_get(frequencyObj, i), &freq);
 			frequency[i] = freq;
+			freq_cnt++;
 		}
 
-		frequency[frequency_arrsize] = NULL;
 		is_scan_option = true;
 	}
 
@@ -2697,7 +2698,7 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 
 	if (is_scan_option)
 	{
-		if (!wifi_scan_now_with_option(ssid, frequency))
+		if (!wifi_scan_now_with_option(ssid, &frequency, freq_cnt))
 		{
 			LSMessageReplyCustomError(sh, message, "Error in scanning network",
 												  WCA_API_ERROR_SCANNING);
@@ -2719,7 +2720,6 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 Exit:
 	j_release(&parsedObj);
 	g_strfreev(ssid);
-	g_strfreev(frequency);
 	return true;
 }
 

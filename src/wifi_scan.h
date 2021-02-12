@@ -82,5 +82,5 @@ extern void wifi_scan_stop(void);
  * Starts a fresh scan with options, or does nothing if scan already running.
  * Returns success/error.
  */
-extern gboolean wifi_scan_now_with_option(const GStrv *ssid, const GStrv *freq);
+extern gboolean wifi_scan_now_with_option(const GStrv *ssid, const int *freq, const int freq_num);
 
