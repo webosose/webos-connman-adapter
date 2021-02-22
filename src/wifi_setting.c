@@ -1159,7 +1159,7 @@ void sync_network_configs_with_profiles(void)
 	while (iter != NULL)
 	{
 		rename_files_t *fileptrs = (rename_files_t *)(iter->data);
-		g_rename(fileptrs->oldpath, fileptrs->newpath);
+		(void)g_rename(fileptrs->oldpath, fileptrs->newpath);
 		g_free(fileptrs->oldpath);
 		g_free(fileptrs->newpath);
 		iter = iter->next;
@@ -1251,7 +1251,7 @@ static gboolean inotify_data(GIOChannel *channel, GIOCondition cond,
 			{
 				if (g_strcmp0(abs_filename, config_pathname) != 0)
 				{
-					g_rename(abs_filename, config_pathname);
+					(void)g_rename(abs_filename, config_pathname);
 				}
 				g_free(config_pathname);
 			}
