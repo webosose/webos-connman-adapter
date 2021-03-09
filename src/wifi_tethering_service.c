@@ -648,7 +648,7 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 			                          WCA_API_ERROR_TETHERING_PASSPHRASE_INVALID);
 			goto cleanup;
 		}
-
+/*
 		if (is_open && passphrase != NULL && strlen(passphrase) > 0)
 		{
 			LSMessageReplyCustomError(sh, message,
@@ -656,7 +656,7 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 			                          WCA_API_ERROR_TETHERING_PASSPHRASE_WITH_OPEN_FAILED);
 			goto cleanup;
 		}
-
+*/
 		invalidArg = FALSE;
 
 		if (!is_open &&
