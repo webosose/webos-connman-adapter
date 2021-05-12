@@ -3118,6 +3118,21 @@ Not applicable.
 static bool handle_get_profilelist_command(LSHandle *sh, LSMessage *message,
         void *context)
 {
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(dummy,
+	                                     integer)))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref profileIdObj = {0};
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dummy"), &profileIdObj))
+	{
+		LSMessageReplyErrorInvalidParams(sh, message);
+		goto cleanup;
+	}
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
