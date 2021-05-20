@@ -2439,6 +2439,23 @@ returnValue | yes | Boolean | True
 static bool handle_cancel_command(LSHandle *handle, LSMessage *message,
                                   void *user_data)
 {
+
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(handle, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(dummy,
+	                                     integer)))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref profileIdObj = {0};
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dummy"), &profileIdObj))
+	{
+		LSMessageReplyErrorInvalidParams(handle, message);
+		return true;
+	}
+
 	connman_service_t *connecting_service;
 
 	if (!connman_status_check(manager, handle, message))
@@ -3469,6 +3486,22 @@ Not applicable.
 static bool handle_create_wpspin_command(LSHandle *sh, LSMessage *message,
         void *context)
 {
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(dummy,
+	                                     integer)))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref profileIdObj = {0};
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dummy"), &profileIdObj))
+	{
+		LSMessageReplyErrorInvalidParams(sh, message);
+		return true;
+	}
+
 	jvalue_ref reply = jobject_create();
 	LSError lserror;
 	LSErrorInit(&lserror);
@@ -3633,6 +3666,23 @@ Not applicable.
 static bool handle_cancel_wps_command(LSHandle *sh, LSMessage *message,
                                       void *context)
 {
+
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(dummy,
+	                                     integer)))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref profileIdObj = {0};
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dummy"), &profileIdObj))
+	{
+		LSMessageReplyErrorInvalidParams(sh, message);
+		return true;
+	}
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
@@ -3843,6 +3893,22 @@ Not applicable.
 static bool handle_get_country_code_command(LSHandle *sh,
         LSMessage *message, void *context)
 {
+	// To prevent memory leaks, schema should be checked before the variables will be initialized.
+	jvalue_ref parsedObj = {0};
+	if (!LSMessageValidateSchema(sh, message,
+	                             j_cstr_to_buffer(STRICT_SCHEMA(PROPS_1(PROP(dummy,
+	                                     integer)))), &parsedObj))
+	{
+		return true;
+	}
+
+	jvalue_ref profileIdObj = {0};
+	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dummy"), &profileIdObj))
+	{
+		LSMessageReplyErrorInvalidParams(sh, message);
+		return true;
+	}
+
 	if (!connman_status_check(manager, sh, message))
 	{
 		return true;
