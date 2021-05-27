@@ -3147,7 +3147,7 @@ static bool handle_get_profilelist_command(LSHandle *sh, LSMessage *message,
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("dummy"), &profileIdObj))
 	{
 		LSMessageReplyErrorInvalidParams(sh, message);
-		goto cleanup;
+		return true;
 	}
 
 	if (!connman_status_check(manager, sh, message))
