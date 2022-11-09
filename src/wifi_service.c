@@ -1932,7 +1932,7 @@ static gboolean signal_polling_cb(gpointer user_data)
 	        manager);
 	connman_technology_interface_t interface_properties;
 
-	if (connman_technology_get_interface_properties(wifi_technology,
+	/*if (connman_technology_get_interface_properties(wifi_technology,
 	        CONNMAN_WIFI_INTERFACE_NAME, &interface_properties) == TRUE)
 	{
 
@@ -1946,7 +1946,7 @@ static gboolean signal_polling_cb(gpointer user_data)
 			send_findnetworks_status_to_subscribers();
 			send_getnetworks_status_to_subscribers();
 		}
-	}
+	}*/
 
 	return TRUE;
 }
