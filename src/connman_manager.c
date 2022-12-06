@@ -535,8 +535,11 @@ static connman_service_t* update_or_add_service(connman_manager_t *manager,
 		gboolean peer_service = FALSE;
 		if (saved || service_on_configured_iface(service_v, &peer_service) == TRUE)
 		{
-			service = connman_service_new(service_v, peer_service);
-			add_service_to_list(manager, service, saved);
+			if(service_v != NULL)
+			{
+				service = connman_service_new(service_v, peer_service);
+				add_service_to_list(manager, service, saved);
+			}
 		}
 	}
 
