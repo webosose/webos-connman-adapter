@@ -1370,6 +1370,12 @@ property_changed_cb(ConnmanInterfaceService *proxy, gchar *property,
 		}
 	}
 
+	else if (!g_strcmp0(property, "Nameservers"))
+        {
+                connman_service_set_changed(service, CONNMAN_SERVICE_CHANGE_CATEGORY_GETSTATUS);
+                connectionmanager_send_status_to_subscribers();
+        }
+
 	g_variant_unref(va);
 }
 
