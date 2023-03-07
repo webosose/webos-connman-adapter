@@ -2403,9 +2403,6 @@ static bool handle_connect_command(LSHandle *sh, LSMessage *message,
 	}
 
 	service_req = luna_service_request_new(sh, message);
-
-	remove_connected_service();
-
 	connect_wifi_with_ssid(ssid, profile, parsedObj, service_req);
 
 	g_free(ssid);
