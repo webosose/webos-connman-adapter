@@ -10,14 +10,18 @@
                         "com.webos.settingsservice",
                         "com.webos.service.wifi",
                         "com.webos.service.config",
-                        "com.webos.service.connectionmanager"]
+                        "com.webos.service.connectionmanager",
+                        "com.webos.service.downloadmanager",
+                        "com.webos.lunasend-*"]
         },
         {
             "service":"com.webos.service.connectionmanager",
             "outbound":["com.webos.service.pdm",
                         "com.webos.settingsservice",
                         "com.webos.service.wifi",
-                        "com.webos.service.config"]
+                        "com.webos.service.config",
+                        "com.webos.service.downloadmanager",
+                        "com.webos.lunasend-*"]
         }
     ]
 }
