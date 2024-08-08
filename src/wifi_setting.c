@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -515,9 +515,15 @@ static gboolean store_config(GKeyFile *keyfile, char *pathname)
 			return FALSE;
 		}
 
-		fprintf(fp, "%s", data);
-		fclose(fp);
-	}
+                if(fprintf(fp, "%s", data)<0)
+                {
+                        WCALOG_DEBUG("Failed_fprintf");
+                }
+                if(fclose(fp)!=0)
+                {
+                        WCALOG_DEBUG("Failed_fileClose");
+                }
+        }
 
 	g_free(data);
 

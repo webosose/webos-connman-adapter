@@ -1,6 +1,6 @@
 /* @@@LICENSE
 *
-* Copyright (c) 2021 LG Electronics, Inc.
+* Copyright (c) 2024 LG Electronics, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -782,7 +782,10 @@ void manager_groups_changed_callback(gpointer data, gboolean group_added)
 {
 	if (group_added)
 	{
-		pthread_mutex_lock(&callback_sequence_lock);
+                if (pthread_mutex_lock(&callback_sequence_lock)!=0)
+                {
+                        return;
+                }
 
 		if (!group_added_by_p2p_request && !group_added_pending)
 		{
@@ -898,7 +901,11 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 	gboolean enable_p2p = TRUE, enable_p2p_listen = FALSE,
 	         enable_persistent_mode = FALSE, error = FALSE;
 
-	pthread_mutex_lock(&callback_sequence_lock);
+        int lock_result = pthread_mutex_lock(&callback_sequence_lock);
+        if (lock_result != 0)
+        {
+           goto cleanup;
+        }
 	group_added_by_p2p_request = FALSE;
 	group_added_pending = FALSE;
 	pthread_mutex_unlock(&callback_sequence_lock);
@@ -1495,7 +1502,12 @@ static bool handle_connect_command(LSHandle *sh, LSMessage *message,
 				settings->wpspin = strdup("");
 			}
 		}
-		pthread_mutex_lock(&callback_sequence_lock);
+                int lock_result = pthread_mutex_lock(&callback_sequence_lock);
+                if(lock_result!=0)
+                {
+                    goto cleanup;
+                }
+
 		group_added_by_p2p_request = TRUE;
 		pthread_mutex_unlock(&callback_sequence_lock);
 		WCALOG_DEBUG("Setup for connecting with secured network");
@@ -2522,7 +2534,7 @@ static bool handle_get_device_name_command(LSHandle *sh, LSMessage *message,
 	connman_technology_t *technology = connman_manager_find_p2p_technology(
 	                                       manager);
 
-	if (technology->p2p_identifier)
+        if ((NULL != technology) && (technology->p2p_identifier))
 	{
 		jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 		jobject_put(reply, J_CSTR_TO_JVAL("deviceName"),
@@ -3521,7 +3533,7 @@ static bool handle_cancel_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	pthread_mutex_lock(&callback_sequence_lock);
+        (void)pthread_mutex_lock(&callback_sequence_lock);
 	group_added_by_p2p_request = FALSE;
 	group_added_pending = FALSE;
 	pthread_mutex_unlock(&callback_sequence_lock);

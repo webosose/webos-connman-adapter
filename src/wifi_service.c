@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2021 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -3431,7 +3431,10 @@ gint generate_new_wpspin(void)
 	pin %= 10000000;
 	pin *= 10;
 
-	fclose(f);
+        if(fclose(f)!=0)
+        {
+          WCALOG_DEBUG("Failed_fileClose");
+        }
 
 	// Append checksum digit in the end
 
