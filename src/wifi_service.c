@@ -2668,7 +2668,7 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("ssid"), &ssidObj))
 	{
-		int i, ssid_arrsize = jarray_size(ssidObj);
+		long int i, ssid_arrsize = jarray_size(ssidObj);
 		ssid = (GStrv) g_new0(GStrv, ssid_arrsize + 1);
 
 		for (i = 0; i < ssid_arrsize; i++)
@@ -2684,7 +2684,7 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("frequency"), &frequencyObj))
 	{
-		int i, frequency_arrsize = jarray_size(frequencyObj);
+		long int i, frequency_arrsize = jarray_size(frequencyObj);
 
 		for (i = 0; i < frequency_arrsize && i < MAX_FREQUENCY_CHANNELS; i++)
 		{
