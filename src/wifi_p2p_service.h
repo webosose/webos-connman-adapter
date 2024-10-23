@@ -1,6 +1,6 @@
 /* @@@LICENSE
 *
-* Copyright (c) 2021 LG Electronics, Inc.
+* Copyright (c) 2024 LG Electronics, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #define _WIFI_P2P_SERVICE_H_
 
 #include <luna-service2/lunaservice.h>
+#include "connman_service.h"
 
 #define LUNA_CATEGORY_P2P                 "/p2p"
 
@@ -65,5 +66,6 @@ extern void send_peer_information_to_subscribers(void);
 extern void send_p2p_get_state_to_subscribers(void);
 extern void update_p2p_device_name(void);
 extern gboolean is_connected_peer(void);
+extern void setPropertyUpdateCallback(connman_service_t *service);
 
 #endif /* _WIFI_P2P_SERVICE_H_ */

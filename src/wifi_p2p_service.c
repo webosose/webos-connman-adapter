@@ -48,6 +48,7 @@
 #include "logging.h"
 #include "errors.h"
 #include "wfdsie/wfdinfoelemwrapper.h"
+#include "connman_technology.h"
 
 LSHandle *localpLSHandle = NULL;
 bool subscribed_for_device_name = false;
@@ -839,7 +840,7 @@ void manager_groups_changed_callback(gpointer data, gboolean group_added)
 
 static gboolean set_p2p_persistent_callback(gpointer user_data)
 {
-	gboolean enable_persistent_mode = user_data;
+	gboolean enable_persistent_mode = *(gboolean *)user_data;
 
 	set_p2p_persistent_mode(enable_persistent_mode);
 
@@ -998,7 +999,7 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 				}
 		}
 		else
-			g_timeout_add(500, set_p2p_persistent_callback, enable_persistent_mode);
+			g_timeout_add(500, set_p2p_persistent_callback, &enable_persistent_mode);
 	}
 
 	if (!enable_p2p && !(enable_p2p == is_p2p_enabled()) && !set_p2p_power_state(enable_p2p))
@@ -3271,7 +3272,7 @@ static bool handle_add_service_command(LSHandle *sh, LSMessage *message,
 
 	jvalue_ref reply = jobject_create();
 	jvalue_ref typeObj = NULL, descriptionObj = NULL, queryObj = NULL,
-	           *responseObj = NULL;
+	           responseObj = NULL;
 	gchar *type = NULL, *description = NULL, *query = NULL, *response = NULL;
 	connman_service_type service_type;
 

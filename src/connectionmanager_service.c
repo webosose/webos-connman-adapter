@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2021 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1318,7 +1318,7 @@ static bool handle_set_ipv6_command(LSHandle *sh, LSMessage *message,
 						                          "Address, prefix length as well as gateway should be specified for out of range networks",
 						                          WCA_API_ERROR_INVALID_PARAMETERS);
 					else if (change_network_ipv6(profile->ssid, profile->security[0], ipv6.address,
-					                             ipv6.prefix_length, ipv6.gateway))
+					                             (const char *)&ipv6.prefix_length, ipv6.gateway))
 					{
 						LSMessageReplySuccess(sh, message);
 					}
@@ -2368,7 +2368,7 @@ static bool handle_monitor_activity_command(LSHandle *sh, LSMessage *message,
 
 	if (NULL == counter)
 	{
-		counter = connman_counter_new(notify_counter_statistics);
+		counter = connman_counter_new((GSourceFunc)notify_counter_statistics);
 
 		if (NULL == counter)
 		{

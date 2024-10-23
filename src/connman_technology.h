@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2021 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -413,6 +413,8 @@ extern connman_technology_t *connman_technology_new(const gchar* path);
  */
 
 extern void connman_technology_free(connman_technology_t *technology);
+
+extern gboolean connman_technology_set_go_intent(connman_technology_t *technology, const guint32 go_intent);
 
 #endif /* CONNMAN_TECHNOLOGY_H_ */
 

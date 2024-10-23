@@ -1951,7 +1951,7 @@ connman_service_t *connman_service_new(GVariant *variant, gboolean p2p)
 		return NULL;
 	}
 
-	g_dbus_proxy_set_default_timeout(service->remote, DBUS_CALL_TIMEOUT);
+	g_dbus_proxy_set_default_timeout((GDBusProxy *)service->remote, DBUS_CALL_TIMEOUT);
 	g_dbus_proxy_set_default_timeout((GDBusProxy *)service->remote, DBUS_CALL_TIMEOUT);
 	service->iprule_added = false;
 

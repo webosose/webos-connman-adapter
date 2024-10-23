@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,5 +59,6 @@ extern void connectionmanager_send_status_to_subscribers(void);
 extern int initialize_connectionmanager_ls2_calls(GMainLoop *mainloop,
         LSHandle **cm_handle);
 extern void send_getinfo_to_subscribers(void);
+extern void send_peer_information_to_subscribers(void);
 
 #endif /* _CONNECTIONMANAGER_SERVICE_H_ */

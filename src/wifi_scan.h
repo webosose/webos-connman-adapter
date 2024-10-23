@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 LG Electronics, Inc.
+// Copyright (c) 2015-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 
 #include "lunaservice_utils.h"
 #include "connman_manager.h"
+
 
 typedef void (*wifi_scan_callback_t)(gpointer user_data);
 
@@ -82,5 +83,5 @@ extern void wifi_scan_stop(void);
  * Starts a fresh scan with options, or does nothing if scan already running.
  * Returns success/error.
  */
-extern gboolean wifi_scan_now_with_option(const GStrv *ssid, const int *freq, const int freq_num);
-
+extern gboolean wifi_scan_now_with_option(const GStrv ssid, const int *freq, const int freq_num);
+gboolean wifi_scan_now_p2p(void);

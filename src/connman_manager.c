@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2021 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1697,7 +1697,7 @@ connman_service_t *connman_manager_get_connected_service_by_interfaceName(GSList
 		service = (struct connman_service *)(iter->data);
 		if(!g_strcmp0(interface, service->interface_name))
 		{
-			plugged = true;
+			*plugged = true;
 			int service_state = connman_service_get_state(service->state);
 
 			if(service_state == CONNMAN_SERVICE_STATE_ONLINE
@@ -1959,7 +1959,7 @@ services_changed_cb(ConnmanInterfaceManager *proxy, GVariant *services_added,
 
 	if (connman_update_callbacks->services_changed)
 	{
-		connman_update_callbacks->services_changed(services_added, services_removed);
+		connman_update_callbacks->services_changed(services_added, (const gchar **)services_removed);
 	}
 
 	unsigned char service_type = 0;
@@ -1991,7 +1991,7 @@ saved_services_changed_cb(ConnmanInterfaceManager *proxy,
 	if (connman_update_callbacks->saved_services_changed)
 	{
 		connman_update_callbacks->saved_services_changed(saved_services_added,
-		        saved_services_removed);
+		        (const gchar **)saved_services_removed);
 	}
 
 	connman_manager_update_services(manager, saved_services_added, NULL, TRUE);

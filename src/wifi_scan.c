@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2021 LG Electronics, Inc.
+// Copyright (c) 2015-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include "wifi_scan.h"
 #include "logging.h"
 #include "utils.h"
+#include "wifi_p2p_service.h"
+#include "common.h"
 
 #define MIN_SCAN_INTERVAL 1000
 
@@ -423,7 +425,7 @@ void wifi_scan_start(connman_technology_t* _wifi_tech)
 	}
 }
 
-gboolean wifi_scan_now_with_option(const GStrv *ssid, const int *freq, const int freq_num)
+gboolean wifi_scan_now_with_option(const GStrv ssid, const int *freq, const int freq_num)
 {
 	if (!wifi_tech)
 	{

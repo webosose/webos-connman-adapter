@@ -867,7 +867,7 @@ gboolean change_network_ipv6(const char *ssid, const char *security,
 }
 
 gboolean change_network_dns(const char *ssid, const char *security,
-                            const GStrv *dns)
+                            const GStrv dns)
 {
 	gchar *pathname = NULL, *config_group = NULL;
 	GKeyFile *keyfile = NULL;

@@ -2712,7 +2712,7 @@ static bool handle_scan_command(LSHandle *sh, LSMessage *message,
 
 	if (is_scan_option)
 	{
-		if (!wifi_scan_now_with_option(ssid, &frequency, freq_cnt))
+		if (!wifi_scan_now_with_option(ssid, frequency, freq_cnt))
 		{
 			LSMessageReplyCustomError(sh, message, "Error in scanning network",
 												  WCA_API_ERROR_SCANNING);
@@ -2885,7 +2885,7 @@ static bool handle_change_network_command(LSHandle *sh, LSMessage *message,
 			connman_service_t *service = (connman_service_t *)(ap->data);
 
 			if (g_strcmp0(service->name, profile->ssid) ||
-			        check_service_security(service, profile->security))
+			        check_service_security(service, profile->security[0]))
 			{
 				continue;
 			}
@@ -4144,7 +4144,7 @@ int initialize_wifi_ls2_calls(GMainLoop *mainloop , LSHandle **wifi_handle)
 		goto Exit;
 	}
 
-	if (LSSubscriptionSetCancelFunction(pLsHandle, handle_luna_subscription_cancel, NULL, &lserror) == false)
+	if (LSSubscriptionSetCancelFunction(pLsHandle, (LSFilterFunc) handle_luna_subscription_cancel, NULL, &lserror) == false)
 	{
 		WCALOG_ESCAPED_ERRMSG(MSGID_WIFI_SUBSCRIPTIONCANCEL_LUNA_ERROR, lserror.message);
 		goto Exit;
@@ -4153,7 +4153,7 @@ int initialize_wifi_ls2_calls(GMainLoop *mainloop , LSHandle **wifi_handle)
 	g_type_init();
 
 	g_bus_watch_name(G_BUS_TYPE_SYSTEM, "net.connman",
-	                 G_BUS_NAME_WATCHER_FLAGS_NONE, connman_service_started, connman_service_stopped,
+	                 G_BUS_NAME_WATCHER_FLAGS_NONE, connman_service_started, (GBusNameVanishedCallback) connman_service_stopped,
 	                 NULL, NULL);
 
 	retrieve_system_locale_info(pLsHandle);

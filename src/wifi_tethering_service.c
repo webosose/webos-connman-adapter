@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2020 LG Electronics, Inc.
+// Copyright (c) 2014-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -749,7 +749,7 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 
 	if (jobject_get_exists(parsedObj, J_CSTR_TO_BUF("enabled"), &enabledObj))
 	{
-		jboolean_get(enabledObj, &enable_tethering);
+		jboolean_get(enabledObj, (bool *) &enable_tethering);
 
 		if (enable_tethering && is_wifi_tethering())
 		{
