@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2021 LG Electronics, Inc.
+# Copyright (c) 2012-2025 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -83,16 +83,18 @@ set(GDBUS_IF_DIR ${WEBOS_BINARY_CONFIGURED_DIR}/src)
 file (MAKE_DIRECTORY ${GDBUS_IF_DIR})
 
 execute_process(COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-namespace ConnmanInterface --generate-c-code
-			${GDBUS_IF_DIR}/connman-interface --interface-prefix net.connman.
+			connman-interface --interface-prefix net.connman.
 			${CMAKE_CURRENT_SOURCE_DIR}/files/xml/connman.xml
+			WORKING_DIRECTORY ${GDBUS_IF_DIR}
 			RESULT_VARIABLE codegen_failed)
 if(codegen_failed)
 		message(FATAL_ERROR "Error in generating code for connman interface using gdbus-codegen")
 endif()
 
 execute_process(COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-namespace PacrunnerInterface --generate-c-code
-			${GDBUS_IF_DIR}/pacrunner-interface --interface-prefix org.pacrunner.
+			pacrunner-interface --interface-prefix org.pacrunner.
 			${CMAKE_CURRENT_SOURCE_DIR}/files/xml/pacrunner.xml
+			WORKING_DIRECTORY ${GDBUS_IF_DIR}
 			RESULT_VARIABLE codegen_failed)
 if(codegen_failed)
 		message(FATAL_ERROR "Error in generating code for pacrunner interface using gdbus-codegen")
