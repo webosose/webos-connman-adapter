@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -241,7 +241,7 @@ static bool LSMessageParseToNative_valist(LSMessage *message, jvalue_ref *parsed
 		return false;
 	}
 
-	error = json_convert_to_native_valist(*parsedObj, &args);
+	error = json_convert_to_native_valist(*parsedObj, (va_list *)&args);
 
 	if (error)
 	{
