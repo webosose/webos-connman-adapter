@@ -1,6 +1,6 @@
 /* @@@LICENSE
 *
-* Copyright (c) 2024 LG Electronics, Inc.
+* Copyright (c) 2024-2025 LG Electronics, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ bool subscribed_for_device_name = false;
 static pthread_mutex_t callback_sequence_lock = PTHREAD_MUTEX_INITIALIZER;
 static gboolean group_added_by_p2p_request = FALSE;
 static gboolean group_added_pending = FALSE;
+static gboolean enable_persistent_mode = FALSE;
 
 static char* p2p_get_state_prev_response = NULL;
 
@@ -899,8 +900,7 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 		return true;
 	}
 
-	gboolean enable_p2p = TRUE, enable_p2p_listen = FALSE,
-	         enable_persistent_mode = FALSE, error = FALSE;
+	gboolean enable_p2p = TRUE, enable_p2p_listen = FALSE, error = FALSE;
 
         int lock_result = pthread_mutex_lock(&callback_sequence_lock);
         if (lock_result != 0)
@@ -988,7 +988,6 @@ static bool handle_set_state_command(LSHandle *sh, LSMessage *message,
 			                          WCA_API_ERROR_P2P_DISABLED);
 			goto cleanup;
 		}
-
 		if (!enable_p2p)
 		{
 				if (!set_p2p_persistent_mode(enable_persistent_mode))
